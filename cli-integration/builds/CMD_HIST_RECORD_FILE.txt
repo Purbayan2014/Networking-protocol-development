@@ -1,0 +1,11 @@
+show help
+/
+?
+.
+show .
+show registered commands
+.
+show node markins
+.
+config node markins loopback 127.0.0.1
+config no node markins loopback 127.0.0.1
