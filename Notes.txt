@@ -1,0 +1,656 @@
+				Working Prototype of the IGP - ISIS
+				------------------------------------
+
+OSPF favoured more now in the industry when ISIS is being shown more interest and preferred over ospf 
+more by network admins
+
+[High level]
+Four Phases of working of IGP Protocols
+	
+	1. Adjacency Management (The neighbours are know to each devices) 
+		* Sending and Receiving hello packets periodically
+		* Updating neighbours state machine
+	2. Building Link State Database (Each device internally creates a view of topology -- Graph)
+		* Building Link State Packets
+		* Flooding Link State Packets
+		* Build a graph - {a view of the network topology}
+	3. Running SPF algorithms (Dijkstra) on LSDB
+		* Process the LSDB through the algorithm
+		* Compute the results and store
+		* Algorithm challenged
+	4. L3 Route Calculations
+		* Use Results of 3 to compute final L3 routes and update routing
+		* Table
+		* Algorithms challenged
+		
+L3 Routing Table Architecture
+------------------------------
+
+Objectives to be implemented
+-------------------------------
+	> Reaching of Traffic to its intended Destination via Cooperation of L3 devices
+	> Always use the shortest Paths
+	> No loops
+	> ECMP [Equal Cost Multiple Path]
+	> Nodes should recompute RT if topology of the network changes
+	
+	
+Constructed Problem Statement
+--------------------------------
+	> For a given network Graph,  Compute the routing table of each node present in the graph
+	> Input Graph has nodes which are L3 routers and the edges represent the wires connecting them
+	> All the edges are P2P links and there is a cost attached to it
+	> Nodes have Name, and LoopBack address
+Output
+------
+  	> Routing Table
+  	> Each node should compute the routing table
+  	> Each node must know how to reach (a nexthop) a given remote subnet in the graph (loopback addr
+  	  of other L3 devices)
+  	  
+Proposed L3 route Entry Format:
+--------------------------------
+
+Routing Table of node S for example
+OIF --> represents the ethernet interface
+Nexthop ip address {gateway} --> represents the IP address present on the other side of the interface
+
+The key is the destination IP address which is used as a unique ID for a node
+No 2 nodes in the routing Table can have same destination address
+
+{Destination} | {Gateway-ip} | {OIF} | {cost} | {nexthop-node} |
+------------------------------------------------------------------
+|             |              |       |        |                |
+|             |              |       |        |                |
+|             |              |       |        |                |
+|             |              |       |        |                |
+|             |              |       |        |                |
+|             |              |       |        |                |
+|             |              |       |        |                |
+|             |              |       |        |                |
+----------------------------------------------------------------
+
+ECMP [Equal Cost Multiple Path]
+--------------------------------
+When there exists path where travelling to the destination deals with the same amount of weight
+then the routing table works a bit differently
+
+In the field of Oif ---> there will be present more than 2 interfaces like
+	> eth0/1 and eth0/2
+	
+So that the data from the source to the destination can reach the node 
+equally through each of them to the destination
+
+Phase 1 --> Building the input graph
+--------------------------------------
+	> Exchanging packets between the nodes
+	> Building database regarding the neighbours
+		> Every routing device should know its neighbours
+	> Flooding the neighbour's database to store the information about the
+		neighbours of the nodes
+	> Building the cumulative neighbours database i:e the network graph
+
+Exchange of packets and Building Database
+------------------------------------------
+	> Edge Case : The packets should be exchanges only between directly connected nodes
+	
+	Structure of Packets
+	--------------------
+	
+	{"R1", 10.0.0.1/24, eth0, 122.1.1.2,...etc}
+	{routername, source, interface, own_loopback_addr.. etc}
+	
+Neighbour's Database 
+---------------------
+
+Peer Interface --> interface through which Router R2 receives the data
+Local Interface --> interface of R2 for sending data
+Local IP --> IP of R2
+Peer IP ---> IP of R1
+Neighbour Loopback Address --> LoopBack address of R1
+
+Example DB for R2
+------------------
+Neigbhour Name | Peer interface | Local Interface | Peer IP    | Local IP   | Neighbour Loopback Address |
+	R1		eth0		eth1	    10.1.1.1/24  10.1.1.2/24   122.1.1.1
+	
+Flooding of Database
+---------------------
+
+The contents of the database for R2 or any other router is to be conveyed to all the other L3 routers
+database by some packet mechanism to the routers called link state packets
+	> LSP is to be used by all the routers to copy their neighbour-ship database
+	> Then convey these packets to other routers
+	
+Objectives to be implemented after receiving the packets
+	> Store it into the local memory
+	> Forward the packet to the other routers
+	
+Collection of all LSP of all routing Device is called LSPDB --> NETWORK GRAPH
+[link state packet database]
+Every node should build up the same LSPDB, Every node has the same view of the physical network 
+topology in the form of a graph data structure
+
+Phase 2 ---> SPF Algorithm on Input Graph [Dijkstra]
+-----------------------------------------
+
+Evaluating the neighbours ---> Dequeing the least code node ----> Recording Result ---> Back to step1
+
+Pseudo Code
+------------
+
+1) Initialize distances of all vertices as infinite.
+
+2) Create an empty priority_queue pq.  Every item
+   of pq is a pair (weight, vertex). Weight (or 
+   distance) is used  as first item  of pair
+   as first item is by default used to compare
+   two pairs
+
+3) Insert source vertex into pq and make its
+   distance as 0.
+
+4) While either pq doesn't become empty
+    a) Extract minimum distance vertex from pq. 
+       Let the extracted vertex be u.
+    b) Loop through all adjacent of u and do 
+       following for every vertex v.
+
+           // If there is a shorter path to v
+           // through u. 
+           If dist[v] > dist[u] + weight(u, v)
+
+               (i) Update distance of v, i.e., do
+                     dist[v] = dist[u] + weight(u, v)
+               (ii) Insert v into the pq (Even if v is
+                    already there)
+               
+5) Print distance array dist[] to print all shortest
+   paths. 
+  
+Python implementation
+----------------------
+ 
+from queue import PriorityQueue # essentially a binary heap
+
+def dijkstra(G, start, goal):
+    """ Uniform-cost search / dijkstra """
+    visited = set()
+    cost = {start: 0}
+    parent = {start: None}
+    todo = PriorityQueue()
+  
+    todo.put((0, start))
+    while todo:
+        while not todo.empty():
+            _, vertex = todo.get() # finds lowest cost vertex
+            # loop until we get a fresh vertex
+            if vertex not in visited: break
+        else: # if todo ran out
+            break # quit main loop
+        visited.add(vertex)
+        if vertex == goal:
+            break
+        for neighbor, distance in G[vertex]:
+            if neighbor in visited: continue # skip these to save time
+            old_cost = cost.get(neighbor, float('inf')) # default to infinity
+            new_cost = cost[vertex] + distance
+            if new_cost < old_cost:
+                todo.put((new_cost, neighbor))
+                cost[neighbor] = new_cost
+                parent[neighbor] = vertex
+
+    return parent
+
+def make_path(parent, goal):
+    if goal not in parent:
+        return None
+    v = goal
+    path = []
+    while v is not None: # root has null parent
+        path.append(v)
+        v = parent[v]
+    return path[::-1]
+
+
+## Example
+
+G = { # random example graph
+ 'A': {('C', 76)},
+ 'B': {('C', 20), ('J', 78)},
+ 'C': {('C', 62), ('F', 99), ('G', 72), ('H', 40)},
+ 'D': {('A',  8), ('G', 71), ('I', 61)},
+ 'E': {('C', 16), ('E', 54), ('I',  3)},
+ 'F': {('J', 66)},
+ 'G': {('B', 92), ('E', 48), ('G', 31)},
+ 'H': {('G', 36)},
+ 'I': {('J', 88), ('K', 16)},
+ 'J': {('H',  4), ('K', 46)},
+ 'K': {('I', 40)}
+}
+
+parent = dijkstra(G, 'A', 'K')
+print(make_path(parent, 'K'))
+
+C implementation
+------------------
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+ 
+// A structure to represent a
+// node in adjacency list
+struct AdjListNode
+{
+    int dest;
+    int weight;
+    struct AdjListNode* next;
+};
+ 
+// A structure to represent
+// an adjacency list
+struct AdjList
+{
+     
+   // Pointer to head node of list
+   struct AdjListNode *head;
+};
+ 
+// A structure to represent a graph.
+// A graph is an array of adjacency lists.
+// Size of array will be V (number of
+// vertices in graph)
+struct Graph
+{
+    int V;
+    struct AdjList* array;
+};
+ 
+// A utility function to create
+// a new adjacency list node
+struct AdjListNode* newAdjListNode(
+                   int dest, int weight)
+{
+    struct AdjListNode* newNode =
+            (struct AdjListNode*)
+      malloc(sizeof(struct AdjListNode));
+    newNode->dest = dest;
+    newNode->weight = weight;
+    newNode->next = NULL;
+    return newNode;
+}
+ 
+// A utility function that creates
+// a graph of V vertices
+struct Graph* createGraph(int V)
+{
+    struct Graph* graph = (struct Graph*)
+            malloc(sizeof(struct Graph));
+    graph->V = V;
+ 
+    // Create an array of adjacency lists. 
+    // Size of array will be V
+    graph->array = (struct AdjList*)
+       malloc(V * sizeof(struct AdjList));
+ 
+    // Initialize each adjacency list
+    // as empty by making head as NULL
+    for (int i = 0; i < V; ++i)
+        graph->array[i].head = NULL;
+ 
+    return graph;
+}
+ 
+// Adds an edge to an undirected graph
+void addEdge(struct Graph* graph, int src,
+                   int dest, int weight)
+{
+    // Add an edge from src to dest. 
+    // A new node is added to the adjacency
+    // list of src.  The node is
+    // added at the beginning
+    struct AdjListNode* newNode =
+            newAdjListNode(dest, weight);
+    newNode->next = graph->array[src].head;
+    graph->array[src].head = newNode;
+ 
+    // Since graph is undirected,
+    // add an edge from dest to src also
+    newNode = newAdjListNode(src, weight);
+    newNode->next = graph->array[dest].head;
+    graph->array[dest].head = newNode;
+}
+ 
+// Structure to represent a min heap node
+struct MinHeapNode
+{
+    int  v;
+    int dist;
+};
+ 
+// Structure to represent a min heap
+struct MinHeap
+{
+     
+    // Number of heap nodes present currently
+    int size;    
+   
+    // Capacity of min heap
+    int capacity; 
+   
+    // This is needed for decreaseKey()
+    int *pos;   
+    struct MinHeapNode **array;
+};
+ 
+// A utility function to create a
+// new Min Heap Node
+struct MinHeapNode* newMinHeapNode(int v,
+                                 int dist)
+{
+    struct MinHeapNode* minHeapNode =
+           (struct MinHeapNode*)
+      malloc(sizeof(struct MinHeapNode));
+    minHeapNode->v = v;
+    minHeapNode->dist = dist;
+    return minHeapNode;
+}
+ 
+// A utility function to create a Min Heap
+struct MinHeap* createMinHeap(int capacity)
+{
+    struct MinHeap* minHeap =
+         (struct MinHeap*)
+      malloc(sizeof(struct MinHeap));
+    minHeap->pos = (int *)malloc(
+            capacity * sizeof(int));
+    minHeap->size = 0;
+    minHeap->capacity = capacity;
+    minHeap->array =
+         (struct MinHeapNode**)
+                 malloc(capacity *
+       sizeof(struct MinHeapNode*));
+    return minHeap;
+}
+ 
+// A utility function to swap two
+// nodes of min heap.
+// Needed for min heapify
+void swapMinHeapNode(struct MinHeapNode** a,
+                     struct MinHeapNode** b)
+{
+    struct MinHeapNode* t = *a;
+    *a = *b;
+    *b = t;
+}
+ 
+// A standard function to
+// heapify at given idx
+// This function also updates
+// position of nodes when they are swapped.
+// Position is needed for decreaseKey()
+void minHeapify(struct MinHeap* minHeap,
+                                  int idx)
+{
+    int smallest, left, right;
+    smallest = idx;
+    left = 2 * idx + 1;
+    right = 2 * idx + 2;
+ 
+    if (left < minHeap->size &&
+        minHeap->array[left]->dist <
+         minHeap->array[smallest]->dist )
+      smallest = left;
+ 
+    if (right < minHeap->size &&
+        minHeap->array[right]->dist <
+         minHeap->array[smallest]->dist )
+      smallest = right;
+ 
+    if (smallest != idx)
+    {
+        // The nodes to be swapped in min heap
+        MinHeapNode *smallestNode =
+             minHeap->array[smallest];
+        MinHeapNode *idxNode =
+                 minHeap->array[idx];
+ 
+        // Swap positions
+        minHeap->pos[smallestNode->v] = idx;
+        minHeap->pos[idxNode->v] = smallest;
+ 
+        // Swap nodes
+        swapMinHeapNode(&minHeap->array[smallest],
+                         &minHeap->array[idx]);
+ 
+        minHeapify(minHeap, smallest);
+    }
+}
+ 
+// A utility function to check if
+// the given minHeap is empty or not
+int isEmpty(struct MinHeap* minHeap)
+{
+    return minHeap->size == 0;
+}
+ 
+// Standard function to extract
+// minimum node from heap
+struct MinHeapNode* extractMin(struct MinHeap*
+                                   minHeap)
+{
+    if (isEmpty(minHeap))
+        return NULL;
+ 
+    // Store the root node
+    struct MinHeapNode* root =
+                   minHeap->array[0];
+ 
+    // Replace root node with last node
+    struct MinHeapNode* lastNode =
+         minHeap->array[minHeap->size - 1];
+    minHeap->array[0] = lastNode;
+ 
+    // Update position of last node
+    minHeap->pos[root->v] = minHeap->size-1;
+    minHeap->pos[lastNode->v] = 0;
+ 
+    // Reduce heap size and heapify root
+    --minHeap->size;
+    minHeapify(minHeap, 0);
+ 
+    return root;
+}
+ 
+// Function to decreasekey dist value
+// of a given vertex v. This function
+// uses pos[] of min heap to get the
+// current index of node in min heap
+void decreaseKey(struct MinHeap* minHeap,
+                         int v, int dist)
+{
+    // Get the index of v in  heap array
+    int i = minHeap->pos[v];
+ 
+    // Get the node and update its dist value
+    minHeap->array[i]->dist = dist;
+ 
+    // Travel up while the complete
+    // tree is not heapified.
+    // This is a O(Logn) loop
+    while (i && minHeap->array[i]->dist <
+           minHeap->array[(i - 1) / 2]->dist)
+    {
+        // Swap this node with its parent
+        minHeap->pos[minHeap->array[i]->v] =
+                                      (i-1)/2;
+        minHeap->pos[minHeap->array[
+                             (i-1)/2]->v] = i;
+        swapMinHeapNode(&minHeap->array[i], 
+                 &minHeap->array[(i - 1) / 2]);
+ 
+        // move to parent index
+        i = (i - 1) / 2;
+    }
+}
+ 
+// A utility function to check if a given vertex
+// 'v' is in min heap or not
+bool isInMinHeap(struct MinHeap *minHeap, int v)
+{
+   if (minHeap->pos[v] < minHeap->size)
+     return true;
+   return false;
+}
+ 
+// A utility function used to print the solution
+void printArr(int dist[], int n)
+{
+    printf("Vertex   Distance from Source\n");
+    for (int i = 0; i < n; ++i)
+        printf("%d \t\t %d\n", i, dist[i]);
+}
+ 
+// The main function that calculates
+// distances of shortest paths from src to all
+// vertices. It is a O(ELogV) function
+void dijkstra(struct Graph* graph, int src)
+{
+     
+    // Get the number of vertices in graph
+    int V = graph->V;
+   
+    // dist values used to pick
+    // minimum weight edge in cut
+    int dist[V];    
+ 
+    // minHeap represents set E
+    struct MinHeap* minHeap = createMinHeap(V);
+ 
+    // Initialize min heap with all
+    // vertices. dist value of all vertices
+    for (int v = 0; v < V; ++v)
+    {
+        dist[v] = INT_MAX;
+        minHeap->array[v] = newMinHeapNode(v,
+                                      dist[v]);
+        minHeap->pos[v] = v;
+    }
+ 
+    // Make dist value of src vertex
+    // as 0 so that it is extracted first
+    minHeap->array[src] =
+          newMinHeapNode(src, dist[src]);
+    minHeap->pos[src]   = src;
+    dist[src] = 0;
+    decreaseKey(minHeap, src, dist[src]);
+ 
+    // Initially size of min heap is equal to V
+    minHeap->size = V;
+ 
+    // In the following loop,
+    // min heap contains all nodes
+    // whose shortest distance
+    // is not yet finalized.
+    while (!isEmpty(minHeap))
+    {
+        // Extract the vertex with
+        // minimum distance value
+        struct MinHeapNode* minHeapNode =
+                     extractMin(minHeap);
+       
+        // Store the extracted vertex number
+        int u = minHeapNode->v;
+ 
+        // Traverse through all adjacent
+        // vertices of u (the extracted
+        // vertex) and update
+        // their distance values
+        struct AdjListNode* pCrawl =
+                     graph->array[u].head;
+        while (pCrawl != NULL)
+        {
+            int v = pCrawl->dest;
+ 
+            // If shortest distance to v is
+            // not finalized yet, and distance to v
+            // through u is less than its
+            // previously calculated distance
+            if (isInMinHeap(minHeap, v) &&
+                      dist[u] != INT_MAX &&
+              pCrawl->weight + dist[u] < dist[v])
+            {
+                dist[v] = dist[u] + pCrawl->weight;
+ 
+                // update distance
+                // value in min heap also
+                decreaseKey(minHeap, v, dist[v]);
+            }
+            pCrawl = pCrawl->next;
+        }
+    }
+ 
+    // print the calculated shortest distances
+    printArr(dist, V);
+}
+ 
+ 
+// Driver program to test above functions
+int main()
+{
+    // create the graph given in above figure
+    int V = 9;
+    struct Graph* graph = createGraph(V);
+    addEdge(graph, 0, 1, 4);
+    addEdge(graph, 0, 7, 8);
+    addEdge(graph, 1, 2, 8);
+    addEdge(graph, 1, 7, 11);
+    addEdge(graph, 2, 3, 7);
+    addEdge(graph, 2, 8, 2);
+    addEdge(graph, 2, 5, 4);
+    addEdge(graph, 3, 4, 9);
+    addEdge(graph, 3, 5, 14);
+    addEdge(graph, 4, 5, 10);
+    addEdge(graph, 5, 6, 2);
+    addEdge(graph, 6, 7, 1);
+    addEdge(graph, 6, 8, 6);
+    addEdge(graph, 7, 8, 7);
+ 
+    dijkstra(graph, 0);
+ 
+    return 0;
+}
+
+Time Complexity: The time complexity of the above code/algorithm looks O(V^2) as there are two nested while loops. If we take a closer look, we can observe that the statements in the inner loop are executed O(V+E) times (similar to BFS). The inner loop has decreaseKey() operation which takes O(LogV) time. So overall time complexity is O(E+V)*O(LogV) which is O((E+V)*LogV) = O(ELogV) 
+Note that the above code uses Binary Heap for Priority Queue implementation. Time complexity can be reduced to O(E + VLogV) using Fibonacci Heap. The reason is, that Fibonacci Heap takes O(1) time for decrease-key operation while Binary Heap takes O(Logn) time.
+
+Rules for SPF
+-------------
+		cost=m
+Node X --------------------------------------- Node Y
+cost = x                                     cost = y
+nh1, nh2                                     nh1, nh3
+
+Cases for new nodes being explored
+-----------------------------------
+	> if node y is explored from predecessor node X with a better metric
+		x + m < y
+			--> remove next hops of y
+			--> copy nexthops of x into y
+			--> remove from PQ if present and add it back to PQ
+	> if node y is explored from predecessor node X with a same metric
+		x + m + y (ECMP Case)
+			--> keep existing nexthops of y
+			--> copy nexthops of x into y
+			--> remove duplicates in nexthops of y if present any
+	> if node Y is explored from predecessor node X with higher metric
+		x + m > y
+			--> No action
+	> Algorithm should stop when its empty
+	
+Phase 3 --> Routing Table Calculation
+-------------------------------------
+
+Replace the destination nodes names in the Routing Table with their loopback address
+and we can obtain the complete Routing Table Calculation
