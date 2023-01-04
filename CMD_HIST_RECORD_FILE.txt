@@ -39,3 +39,9 @@ run node R1 ping 122.1.1.2
 show topo
 conf node R1 int eth2 tr f /
 ?
+.
+conf node /
+?
+R0 proto isis
+R0 no proto isis
+.

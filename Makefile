@@ -31,10 +31,14 @@ OBJS=gluethread/glthread.o \
 		  tcp_ip_default_traps.o \
 		  ted/ted.o \
 		  LinuxMemoryManager/mm.o \
+		  Layer5/isis/isis_cli.o \
 		  #Layer2/stp/stp_state_machine.o \
 		  Layer2/stp/stp_bpdu.o \
 		  Layer2/stp/stp_init.o \
 		  Layer2/stp/stp_vlandb.o \
+
+Layer5/isis/isis_cli.o:Layer5/isis/isis_cli.c
+	${CC} ${CFLAGS} -c -I . Layer5/isis/isis_cli.c -o Layer5/isis/isis_cli.o
 
 ted/ted.o:ted/ted.c
 	${CC} ${CFLAGS} -c -I . ted/ted.c -o ted/ted.o
@@ -166,6 +170,7 @@ clean:
 	rm -f libtimer/*.o
 	rm -f EventDispatcher/*.o
 	rm -f Layer5/nbrship_mgmt/*.o
+	rm -f Layer5/isis/*.o
 #STP
 #	rm -f Layer2/stp/*.o
 all:
