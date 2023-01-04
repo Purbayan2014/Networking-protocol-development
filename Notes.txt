@@ -654,3 +654,54 @@ Phase 3 --> Routing Table Calculation
 
 Replace the destination nodes names in the Routing Table with their loopback address
 and we can obtain the complete Routing Table Calculation
+
+Proposed Ecosystem for Developing the Protocol Stack
+----------------------------------------------------
+
+		Application Layer [OSPF,BGP, ISIS, MPLS, etc]
+		Network Layer [IP, IPv6]
+		Data Link Layer [ARP]
+		Physical Layer
+		
+		Required Ecosystem
+		--------------------
+		Supportive Base application interface managers, Build System
+		UI : CLIS, GUIS
+		System Calls -> fork(), Sockets, IPC
+		Underlying tcp/ip stack layer support
+		Testing and automation infrastructure
+		Data structures like linked lists and trees
+		System Supportive libraries ilke Schedulers, Memory Managers , Timers and Locking etc
+		NIC Drivers for Pkt Transmission
+		
+		The TCP/IP stack sdk toolkit will partially(as it doesnt supports NICs) it  simulate these.
+
+TARGETS
+--------
+
+Feature 1     --> Adding cli integration for ISIS protocol in the tcp_ip stack sdk toolkit to 
+		  start and end the initiation for ISIS protocol
+
+	config node <node-name> [yes] protocol isis
+	config node <node-name> [no] protocol isis
+		
+		
+	Adding entry of the layer 5 protocol in the tcp ip stack sdk toolkit
+
+Left
+----
+
+
+Done 
+----
+
+Makefile
+----------
+Objects 
+	Layer5/isis/isis_cli.o
+
+Layer5/isis/isis_cli.o:Layer5isis_cli.c                                                                                                                                                        
+${CC} ${CFLAGS} -c -I . Layer5/isis/isis_cli.c -o Layer5/isis/isis_cli.o
+
+clean:
+	rm -f Layer5/isis/*.o   
