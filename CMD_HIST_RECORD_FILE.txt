@@ -1,0 +1,41 @@
+show help
+cls
+show help
+show help
+show help
+show topology
+show topo node R1
+show node R1 rt
+run node R2 ping 122.1.1.3
+show node R1 arp
+show node R2 arp
+run node R1 ping 122.1.1.2
+conf node R1 traceoptions flag /
+all
+?
+cd 
+run node R1 ping 122.1.1.2
+show topo
+run node R2 ping 122.1.1.1
+conf node R1 traceoptions flag no-all
+show node R1 log-status
+conf node R1 inter eth2 tr f /
+?
+all
+cd 
+show topo
+run node R2 ping 122.1.1.2
+run node R1 ping 122.1.1.2
+show node R1 log
+show node R1 log
+conf node R1 int eth2 tr f /
+?
+stdout
+cd 
+conf gl stdout
+run node R1 ping 122.1.1.2
+conf gl no-stdout
+run node R1 ping 122.1.1.2
+show topo
+conf node R1 int eth2 tr f /
+?
