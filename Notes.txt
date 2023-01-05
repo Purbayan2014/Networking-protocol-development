@@ -688,13 +688,6 @@ Feature 1     --> Adding cli integration for ISIS protocol in the tcp_ip stack s
 		
 	Adding entry of the layer 5 protocol in the tcp ip stack sdk toolkit
 
-Left
-----
-
-
-Done 
-----
-
 Makefile
 ----------
 Objects 
@@ -705,3 +698,46 @@ ${CC} ${CFLAGS} -c -I . Layer5/isis/isis_cli.c -o Layer5/isis/isis_cli.o
 
 clean:
 	rm -f Layer5/isis/*.o   
+
+Backend Handler implementation
+--------------------------------
+    Objectives 
+        > Extract the command codes
+        > Parse the data from the buffer to get the data 
+        > Parse the command code in and use it for init and de-init 
+                > implement init
+                > implement de-init
+        
+
+
+Protocol Configuration Holders
+--------------------------------
+
+Needed for holding Configuration files for the node's protocol's at the device and 
+interface level
+
+    Examples: [device-levels]
+        > do not generate lsp packets
+        > advertise some information in lsp packets
+        >  if protocol is disabled then it disabled on all the interfaces 
+
+    Examples: [interface-levels]
+        > Impacting protocol behaviour per interface
+        > Stop sending lsp packets out of eth0
+        > Start generating lsp packets out of eth0 at some time interval_sec
+        > Enable or disable protocol on eth4
+
+    Proposed
+    ---------
+
+    Add protocol specific node and per-interface level data Configuration holders
+
+        > Add the data structures to isis_rtr.h and isis_intf.h 
+            for device and interface levels
+
+        > After adding these add isis_rtr.h's data structure  
+          in the node_nw_prop data structure
+          because it holds the data at the device levels
+          and now it will be able to hold protocol based device configs 
+          and same for interfaces as well at intf_nw_props {net.h}
+        
