@@ -1,3 +1,4 @@
+
 // #include "../../tcp_public.h"
 #ifndef ISIS_INTF
 #define ISIS_INTF
@@ -13,6 +14,9 @@ configuration for all the nodes at interface levels and then getting typecasted 
 #define ISIS_INTF_INFO(intf_ptr) ((isis_intf_info_t*)((intf_ptr)->intf_nw_props.isis_intf_info))
 
 bool isis_node_intf_is_enable(interface_t *intf);
+void isis_enable_protocol_on_interface(interface_t *intf);
+void isis_disable_protocol_on_interface(interface_t *intf);
+void isis_show_enabled_interfaces(interface_t *intf);
 
 
-#endif 
+#endif

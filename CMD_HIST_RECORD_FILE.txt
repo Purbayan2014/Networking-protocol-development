@@ -88,3 +88,23 @@ show node R0 proto isis
 conf node R1 proto isis interface all
 conf node R1 proto isis interface all
 conf node R1 no proto isis interface all
+.
+.
+conf node R0 proto isis interface eth0
+conf node R0 proto isis
+conf node R0 proto isis interface ?
+conf node R0 proto isis interface eth0
+conf node R0 no proto isis interface eth0
+conf node R0 proto isis interface all
+conf node R1 proto isis
+conf node R1 proto isis interface all
+conf node R0 proto isis
+conf node R0 proto isis interface all
+conf node R0 no proto isis interface all
+conf node R0 proto isis
+conf node R0 proto isis interface all
+show node R0 proto isis
+conf node R0 no proto isis interface all
+show node R0 proto isis
+conf node R0 no proto isis
+show node R0 proto isis
