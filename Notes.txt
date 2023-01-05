@@ -709,6 +709,18 @@ Backend Handler implementation
                 > implement de-init
         
 
+        init implement 
+                > fetch the current isis info for the current node 
+                > allocate new node as enabled 
+                > if its not null then update the information in then network properties graph by swapping the new val of the new node
+                    to the old node 
+
+        dinit implement
+                > fetch the current isis info for the current node 
+                > then free the memory for the allocated node
+
+Feature 2
+----------
 
 Protocol Configuration Holders
 --------------------------------
@@ -740,4 +752,35 @@ interface level
           because it holds the data at the device levels
           and now it will be able to hold protocol based device configs 
           and same for interfaces as well at intf_nw_props {net.h}
-        
+
+
+
+Feature 3 -- > show node <node-name> proto isis
+
+Responible for fetching device level configs of the isis protocol 
+    > will show isis protocol is enabled or disabled
+
+    > Add the main tree in the isis_cli
+    > Register as a show command in the isis_cli
+    > Add the command codes for checking if isis_show_node_protocol_state is enabled or disabled
+    > Return the status 
+
+    Test
+    ---- 
+        enable --> conf node R0 proto isis
+        check status --> show node R0 proto isis
+        disable --> conf node R0 no proto isis
+        check status --> show node R0 proto isis 
+
+
+Feature 4 --> conf node <node-name> [no] proto isis interface all 
+
+            must enable/disable protocol (alloc/free) isis_intf_info on all interfaces of device 
+
+            conf node <node-name> [no] proto isis interface <intf-name>
+            
+            same thing on a particular interface as well
+
+    Important --> Disabling the protocol on a device must disable protocol on all interfaces also 
+                  Enabling the protocol on a device must not enable protocol at interface level, user should
+                  do it manually through above new clis 
