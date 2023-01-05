@@ -12,4 +12,7 @@ bool isis_is_protocol_enable_on_node(node_t *node) {
     return true;
 }
 
-
+void isis_show_node_protocol_state(node_t *node) {
+    // printf("%s\n()",__FUNCTION__);
+    printf("ISIS Protocol : %s\n", isis_is_protocol_enable_on_node(node) ? "ENABLE":"DISABLE");    
+}

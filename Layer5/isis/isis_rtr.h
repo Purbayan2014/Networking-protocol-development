@@ -1,4 +1,4 @@
-#include "../../tcp_public.h"
+// #include "../../tcp_public.h"
 
 #ifndef ISIS_RTR
 #define ISIS_RTR
@@ -13,8 +13,9 @@ typedef struct isis_node_info_ {
 
 /* fetching the isis_node infor from the node_nw_prop datastructure which holds the 
 configuration for all the nodes at device levels and then getting typecasted */
-#define ISIS_NODE_INFO(node_ptr) ((isis_node_info_t*)((node_ptr)->node_nw_prop.isis_node_info))
+#define ISIS_NODE_INFO(node_ptr) ((isis_node_info_t*)(node_ptr->node_nw_prop.isis_node_info))
 
 bool isis_is_protocol_enable_on_node(node_t *node);
+void isis_show_node_protocol_state(node_t *node);
 
 #endif
