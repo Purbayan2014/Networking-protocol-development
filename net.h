@@ -93,6 +93,9 @@ typedef struct node_nw_prop_{
     /*Device level Appln DS*/
     nmp_t *nmp;
 
+    /* Configuration holders of isis */
+    void *isis_node_info;
+
 	/* Traffic generation */
 	glthread_t traffic_gen_db_head;
 } node_nw_prop_t;
@@ -163,6 +166,9 @@ typedef struct intf_nw_props_ {
     bool is_ipadd_config; 
     ip_add_t ip_add;
     char mask;
+    /* Configuration holder for isis */
+    void *isis_intf_info;
+
 
     /*Interface Statistics*/
     uint32_t pkt_recv;
