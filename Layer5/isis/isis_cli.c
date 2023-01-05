@@ -2,10 +2,72 @@
 #include "../../tcp_public.h"
 #include "isis_cmdcodes.h"
 
+static void isis_init(node_t *node) {
+      /* init the node */
+      printf("%s()/n",__FUNCTION__);
+}
+
+static void isis_deinit(node_t *node) {
+    /* deinit the node */
+    printf("%s()/n",__FUNCTION__);
+}
+
+/* conf <node-name> protocol isis */
 static int isis_config_handler(param_t *param, ser_buff_t *tlv_buf,
-                                    op_mode enabe_or_disable) {
+                                    op_mode enable_or_disable) {
         printf("passed isis config handler");
-        return 0;
+        /*
+            Various command can invoke the same backend 
+            handler but the command helps to differenctiate between 
+            the various codes that gets executed
+
+                > Extract the command codes and 
+                > And use it later to implement various clis
+        */
+
+       int cmd_codes = -1;
+       cmd_codes = EXTRACT_CMD_CODE(tlv_buf); /* the tlv buffer shares the data passed by the user 
+                which is used to obtain the command codes based on it*/
+        /* cmd_codes == ISIS_CONFIG_MODE_ENABLE */
+
+        /*extracting the node-name*/
+        tlv_struct_t *tlv = NULL; /* used as a iterator */
+        char *node_name = NULL; /* pointer to the node_name */
+
+        TLV_LOOP_BEGIN(tlv_buf,tlv){
+
+            /* compare the strings */
+            if(strncmp(tlv->leaf_id, "node-name",strlen("node-name"))==0){
+                node_name = tlv->value;
+            }else {
+                assert(0);
+            }
+
+        }TLV_LOOP_END;
+
+
+        /* getting the value of the node by the node_name */
+        node_t *node;
+        node = node_get_node_by_name(topo, node_name); /* topo is a global variable
+                        representing the topology
+                        node_name is the name of the node  */
+        
+        /* positve or negative command codes */
+        switch(cmd_codes) {
+            /* passing the global first */
+            case ISIS_CONFIG_NODE_ENABLE:
+                switch(enable_or_disable) {
+                    case CONFIG_ENABLE:
+                        isis_init(node);
+                        break;
+                    case CONFIG_DISABLE:
+                        isis_deinit(node);
+                        break;
+                    default:
+                }
+        }
+
+       return 0;
 }
 
 

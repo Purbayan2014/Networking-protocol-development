@@ -45,3 +45,6 @@ conf node /
 R0 proto isis
 R0 no proto isis
 .
+.
+conf node R0 protocol isis
+conf node R0 proto no isis
