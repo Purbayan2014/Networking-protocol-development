@@ -84,3 +84,7 @@ conf node R0 proto isis
 show node R0 proto isis
 conf node R0 no proto isis
 show node R0 proto isis
+.
+conf node R1 proto isis interface all
+conf node R1 proto isis interface all
+conf node R1 no proto isis interface all

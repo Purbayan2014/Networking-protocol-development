@@ -124,11 +124,74 @@ static int isis_config_handler(param_t *param, ser_buff_t *tlv_buf,
        return 0;
 }
 
+/* conf node <node-name> proto isis interface all*/
+static int isis_intf_config_handler(param_t *param, ser_buff_t *tlv_buf,
+                                    op_mode enable_or_disable) {
+        printf("%s()\n",__FUNCTION__);
+        /*
+            Various command can invoke the same backend 
+            handler but the command helps to differenctiate between 
+            the various codes that gets executed
+
+                > Extract the command codes and 
+                > And use it later to implement various clis
+        */
+
+       int cmd_codes = -1;
+       cmd_codes = EXTRACT_CMD_CODE(tlv_buf); /* the tlv buffer shares the data passed by the user 
+                which is used to obtain the command codes based on it*/
+        /* cmd_codes == ISIS_CONFIG_MODE_ENABLE */
+
+        /*extracting the node-name*/
+        tlv_struct_t *tlv = NULL; /* used as a iterator */
+        char *node_name = NULL; /* pointer to the node_name */
+
+        TLV_LOOP_BEGIN(tlv_buf,tlv){
+
+            /* compare the strings */
+            if(strncmp(tlv->leaf_id, "node-name",strlen("node-name"))==0){
+                node_name = tlv->value;
+            }else {
+                assert(0);
+            }
+
+        }TLV_LOOP_END;
+
+
+        /* getting the value of the node by the node_name */
+        node_t *node;
+        node = node_get_node_by_name(topo, node_name); /* topo is a global variable
+                        representing the topology
+                        node_name is the name of the node  */
+        
+        /* positve or negative command codes */
+        switch(cmd_codes) {
+            /* passing the global first */
+            case CMDCODE_C0NF_NODE_ISIS_PROTO_INTF_ALL_ENABLE:
+                switch(enable_or_disable) {
+
+                    /* config node <node-name> proto isis interface all */
+                    case CONFIG_ENABLE:
+                        printf("\nconf node %s proto isis interface all ", node_name);
+                        break;
+
+                    /* conf node <node-name> [no] proto isis interface all*/   
+                    case CONFIG_DISABLE:
+                        printf("\nconf node %s [no] proto isis interface all", node_name);                   
+                        break;
+                    default:;
+                }
+        }
+
+       return 0;
+}
+
 
 int isis_config_cli_tree(param_t *param) {
 
     {
             // cli intergration protocol hiearchy
+            // conf node <node-name> proto isis
             static param_t isis_proto;
             init_param(
                 &isis_proto, /* address of the current param*/
@@ -151,6 +214,40 @@ int isis_config_cli_tree(param_t *param) {
             /* The command code here is used to sent to the the command code to the callback function
                 which is used to trigger different types of logics in the background */
             set_param_cmd_code(&isis_proto,ISIS_CONFIG_NODE_ENABLE);
+
+
+            {
+                /* config node <node-name> proto isis interface */
+                static param_t interface; // interface is a new keyword which is the child of the isis
+                init_param(
+                    &interface,
+                    CMD,
+                    "interface",
+                    0,  /* incomplete command so no callback handler required */
+                    0,
+                    INVALID,
+                    0,
+                    "interface");
+
+                    libcli_register_param(&isis_proto, &interface);
+                        
+                        {
+                               /* conf node <node-name> proto isis interface all */
+                               static param_t all;
+                               init_param(
+                                &all,
+                                CMD,
+                                "all",
+                                isis_intf_config_handler,
+                                0,
+                                INVALID,
+                                0,
+                                "all interface");
+
+                                libcli_register_param(&interface, &all);
+                                set_param_cmd_code(&all, CMDCODE_C0NF_NODE_ISIS_PROTO_INTF_ALL_ENABLE);
+                        }
+            }
     }  
 
     return 0;  
