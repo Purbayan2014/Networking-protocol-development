@@ -3,6 +3,7 @@
 #include "isis_cmdcodes.h"
 #include "isis_rtr.h"
 #include "isis_intf.h"
+#include "isis_pkt.h"
 
 static void isis_init(node_t *node) {
       /* init the node */
@@ -12,6 +13,9 @@ static void isis_init(node_t *node) {
       // ISIS_NODE_INFO(node) = isis_node_info;
       isis_node_info = calloc(1, sizeof(isis_node_info_t));
       node->node_nw_prop.isis_node_info = isis_node_info;
+      /* registering the interest packets onto the protocol stack
+      based on the packet classification rule*/
+      tcp_stack_register_l2_pkt_trap_rule(node, isis_pkt_trap_rule, isis_pkt_recieve);
 }
 
 static void isis_deinit(node_t *node) {
@@ -22,12 +26,15 @@ static void isis_deinit(node_t *node) {
     free(isis_node_info);
     // ISIS_NODE_INFO(node) = NULL;
     node->node_nw_prop.isis_node_info = NULL; 
+    /* deregistering the interest packets onto the protocol stack
+    based on the packet classification rule*/
+    tcp_stack_de_register_l2_pkt_trap_rule(node, isis_pkt_trap_rule, isis_pkt_recieve);
 }
 
 /*show node <node-name> proto isis */
 static int isis_show_handler(param_t *param, ser_buff_t *tlv_buf,
                                     op_mode enable_or_disable) {
-       printf("%s()/n",__FUNCTION__);
+       printf("%s() /n",__FUNCTION__);
        int cmd_codes = -1;
        cmd_codes = EXTRACT_CMD_CODE(tlv_buf); /* the tlv buffer shares the data passed by the user 
                 which is used to obtain the command codes based on it*/
