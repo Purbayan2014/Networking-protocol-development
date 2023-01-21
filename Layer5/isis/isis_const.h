@@ -8,4 +8,19 @@
 # define ISIS_DEFAULT_INTF_COST     10 
 # define ISIS_HOLD_TIME_FACTOR   2
 
+
+/*ISIS TLVs */
+#define ISIS_TLV_HOSTNAME   137 // as per standard 
+#define ISIS_TLV_RTR_ID     134 // as per standard 
+#define ISIS_TLV_IF_IP      132 // as per standard 
+#define ISIS_TLV_HOLD_TIME  5
+#define ISIS_TLV_METRIC_VAL 6
+
+#define ISIS_IS_REACH_TLV  22 // as per standard 
+#define ISIS_TLV_IF_INDEX   4 // as per standard
+#define ISIS_TLV_LOCAL_IP   6 // as per standard
+#define ISIS_TLV_REMOTE_IP  8 // as per standard
+#define ISIS_TLV_ON_DEMAND  111 // imaginary
+#define ISIS_TLV_IF_MAC      131 // Imaginary
+
 # endif

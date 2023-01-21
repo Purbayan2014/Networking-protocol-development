@@ -1,13 +1,13 @@
 				Working Prototype of the IGP - ISIS
 				------------------------------------
 
-OSPF favoured more now in the industry when ISIS is being shown more interest and preferred over ospf 
+OSPF favoured more now in the industry when ISIS is being shown more interest and preferred over ospf
 more by network admins
 
 [High level]
 Four Phases of working of IGP Protocols
-	
-	1. Adjacency Management (The neighbours are know to each devices) 
+
+	1. Adjacency Management (The neighbours are know to each devices)
 		* Sending and Receiving hello packets periodically
 		* Updating neighbours state machine
 	2. Building Link State Database (Each device internally creates a view of topology -- Graph)
@@ -22,7 +22,7 @@ Four Phases of working of IGP Protocols
 		* Use Results of 3 to compute final L3 routes and update routing
 		* Table
 		* Algorithms challenged
-		
+
 L3 Routing Table Architecture
 ------------------------------
 
@@ -33,8 +33,8 @@ Objectives to be implemented
 	> No loops
 	> ECMP [Equal Cost Multiple Path]
 	> Nodes should recompute RT if topology of the network changes
-	
-	
+
+
 Constructed Problem Statement
 --------------------------------
 	> For a given network Graph,  Compute the routing table of each node present in the graph
@@ -47,7 +47,7 @@ Output
   	> Each node should compute the routing table
   	> Each node must know how to reach (a nexthop) a given remote subnet in the graph (loopback addr
   	  of other L3 devices)
-  	  
+
 Proposed L3 route Entry Format:
 --------------------------------
 
@@ -77,8 +77,8 @@ then the routing table works a bit differently
 
 In the field of Oif ---> there will be present more than 2 interfaces like
 	> eth0/1 and eth0/2
-	
-So that the data from the source to the destination can reach the node 
+
+So that the data from the source to the destination can reach the node
 equally through each of them to the destination
 
 Phase 1 --> Building the input graph
@@ -93,14 +93,14 @@ Phase 1 --> Building the input graph
 Exchange of packets and Building Database
 ------------------------------------------
 	> Edge Case : The packets should be exchanges only between directly connected nodes
-	
+
 	Structure of Packets
 	--------------------
-	
+
 	{"R1", 10.0.0.1/24, eth0, 122.1.1.2,...etc}
 	{routername, source, interface, own_loopback_addr.. etc}
-	
-Neighbour's Database 
+
+Neighbour's Database
 ---------------------
 
 Peer Interface --> interface through which Router R2 receives the data
@@ -113,7 +113,7 @@ Example DB for R2
 ------------------
 Neigbhour Name | Peer interface | Local Interface | Peer IP    | Local IP   | Neighbour Loopback Address |
 	R1		eth0		eth1	    10.1.1.1/24  10.1.1.2/24   122.1.1.1
-	
+
 Flooding of Database
 ---------------------
 
@@ -121,14 +121,14 @@ The contents of the database for R2 or any other router is to be conveyed to all
 database by some packet mechanism to the routers called link state packets
 	> LSP is to be used by all the routers to copy their neighbour-ship database
 	> Then convey these packets to other routers
-	
+
 Objectives to be implemented after receiving the packets
 	> Store it into the local memory
 	> Forward the packet to the other routers
-	
+
 Collection of all LSP of all routing Device is called LSPDB --> NETWORK GRAPH
 [link state packet database]
-Every node should build up the same LSPDB, Every node has the same view of the physical network 
+Every node should build up the same LSPDB, Every node has the same view of the physical network
 topology in the form of a graph data structure
 
 Phase 2 ---> SPF Algorithm on Input Graph [Dijkstra]
@@ -142,7 +142,7 @@ Pseudo Code
 1) Initialize distances of all vertices as infinite.
 
 2) Create an empty priority_queue pq.  Every item
-   of pq is a pair (weight, vertex). Weight (or 
+   of pq is a pair (weight, vertex). Weight (or
    distance) is used  as first item  of pair
    as first item is by default used to compare
    two pairs
@@ -151,26 +151,26 @@ Pseudo Code
    distance as 0.
 
 4) While either pq doesn't become empty
-    a) Extract minimum distance vertex from pq. 
+    a) Extract minimum distance vertex from pq.
        Let the extracted vertex be u.
-    b) Loop through all adjacent of u and do 
+    b) Loop through all adjacent of u and do
        following for every vertex v.
 
            // If there is a shorter path to v
-           // through u. 
+           // through u.
            If dist[v] > dist[u] + weight(u, v)
 
                (i) Update distance of v, i.e., do
                      dist[v] = dist[u] + weight(u, v)
                (ii) Insert v into the pq (Even if v is
                     already there)
-               
+
 5) Print distance array dist[] to print all shortest
-   paths. 
-  
+   paths.
+
 Python implementation
 ----------------------
- 
+
 from queue import PriorityQueue # essentially a binary heap
 
 def dijkstra(G, start, goal):
@@ -179,7 +179,7 @@ def dijkstra(G, start, goal):
     cost = {start: 0}
     parent = {start: None}
     todo = PriorityQueue()
-  
+
     todo.put((0, start))
     while todo:
         while not todo.empty():
@@ -238,7 +238,7 @@ C implementation
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
- 
+
 // A structure to represent a
 // node in adjacency list
 struct AdjListNode
@@ -247,16 +247,16 @@ struct AdjListNode
     int weight;
     struct AdjListNode* next;
 };
- 
+
 // A structure to represent
 // an adjacency list
 struct AdjList
 {
-     
+
    // Pointer to head node of list
    struct AdjListNode *head;
 };
- 
+
 // A structure to represent a graph.
 // A graph is an array of adjacency lists.
 // Size of array will be V (number of
@@ -266,7 +266,7 @@ struct Graph
     int V;
     struct AdjList* array;
 };
- 
+
 // A utility function to create
 // a new adjacency list node
 struct AdjListNode* newAdjListNode(
@@ -280,7 +280,7 @@ struct AdjListNode* newAdjListNode(
     newNode->next = NULL;
     return newNode;
 }
- 
+
 // A utility function that creates
 // a graph of V vertices
 struct Graph* createGraph(int V)
@@ -288,25 +288,25 @@ struct Graph* createGraph(int V)
     struct Graph* graph = (struct Graph*)
             malloc(sizeof(struct Graph));
     graph->V = V;
- 
-    // Create an array of adjacency lists. 
+
+    // Create an array of adjacency lists.
     // Size of array will be V
     graph->array = (struct AdjList*)
        malloc(V * sizeof(struct AdjList));
- 
+
     // Initialize each adjacency list
     // as empty by making head as NULL
     for (int i = 0; i < V; ++i)
         graph->array[i].head = NULL;
- 
+
     return graph;
 }
- 
+
 // Adds an edge to an undirected graph
 void addEdge(struct Graph* graph, int src,
                    int dest, int weight)
 {
-    // Add an edge from src to dest. 
+    // Add an edge from src to dest.
     // A new node is added to the adjacency
     // list of src.  The node is
     // added at the beginning
@@ -314,36 +314,36 @@ void addEdge(struct Graph* graph, int src,
             newAdjListNode(dest, weight);
     newNode->next = graph->array[src].head;
     graph->array[src].head = newNode;
- 
+
     // Since graph is undirected,
     // add an edge from dest to src also
     newNode = newAdjListNode(src, weight);
     newNode->next = graph->array[dest].head;
     graph->array[dest].head = newNode;
 }
- 
+
 // Structure to represent a min heap node
 struct MinHeapNode
 {
     int  v;
     int dist;
 };
- 
+
 // Structure to represent a min heap
 struct MinHeap
 {
-     
+
     // Number of heap nodes present currently
-    int size;    
-   
+    int size;
+
     // Capacity of min heap
-    int capacity; 
-   
+    int capacity;
+
     // This is needed for decreaseKey()
-    int *pos;   
+    int *pos;
     struct MinHeapNode **array;
 };
- 
+
 // A utility function to create a
 // new Min Heap Node
 struct MinHeapNode* newMinHeapNode(int v,
@@ -356,7 +356,7 @@ struct MinHeapNode* newMinHeapNode(int v,
     minHeapNode->dist = dist;
     return minHeapNode;
 }
- 
+
 // A utility function to create a Min Heap
 struct MinHeap* createMinHeap(int capacity)
 {
@@ -373,7 +373,7 @@ struct MinHeap* createMinHeap(int capacity)
        sizeof(struct MinHeapNode*));
     return minHeap;
 }
- 
+
 // A utility function to swap two
 // nodes of min heap.
 // Needed for min heapify
@@ -384,7 +384,7 @@ void swapMinHeapNode(struct MinHeapNode** a,
     *a = *b;
     *b = t;
 }
- 
+
 // A standard function to
 // heapify at given idx
 // This function also updates
@@ -397,17 +397,17 @@ void minHeapify(struct MinHeap* minHeap,
     smallest = idx;
     left = 2 * idx + 1;
     right = 2 * idx + 2;
- 
+
     if (left < minHeap->size &&
         minHeap->array[left]->dist <
          minHeap->array[smallest]->dist )
       smallest = left;
- 
+
     if (right < minHeap->size &&
         minHeap->array[right]->dist <
          minHeap->array[smallest]->dist )
       smallest = right;
- 
+
     if (smallest != idx)
     {
         // The nodes to be swapped in min heap
@@ -415,26 +415,26 @@ void minHeapify(struct MinHeap* minHeap,
              minHeap->array[smallest];
         MinHeapNode *idxNode =
                  minHeap->array[idx];
- 
+
         // Swap positions
         minHeap->pos[smallestNode->v] = idx;
         minHeap->pos[idxNode->v] = smallest;
- 
+
         // Swap nodes
         swapMinHeapNode(&minHeap->array[smallest],
                          &minHeap->array[idx]);
- 
+
         minHeapify(minHeap, smallest);
     }
 }
- 
+
 // A utility function to check if
 // the given minHeap is empty or not
 int isEmpty(struct MinHeap* minHeap)
 {
     return minHeap->size == 0;
 }
- 
+
 // Standard function to extract
 // minimum node from heap
 struct MinHeapNode* extractMin(struct MinHeap*
@@ -442,27 +442,27 @@ struct MinHeapNode* extractMin(struct MinHeap*
 {
     if (isEmpty(minHeap))
         return NULL;
- 
+
     // Store the root node
     struct MinHeapNode* root =
                    minHeap->array[0];
- 
+
     // Replace root node with last node
     struct MinHeapNode* lastNode =
          minHeap->array[minHeap->size - 1];
     minHeap->array[0] = lastNode;
- 
+
     // Update position of last node
     minHeap->pos[root->v] = minHeap->size-1;
     minHeap->pos[lastNode->v] = 0;
- 
+
     // Reduce heap size and heapify root
     --minHeap->size;
     minHeapify(minHeap, 0);
- 
+
     return root;
 }
- 
+
 // Function to decreasekey dist value
 // of a given vertex v. This function
 // uses pos[] of min heap to get the
@@ -472,10 +472,10 @@ void decreaseKey(struct MinHeap* minHeap,
 {
     // Get the index of v in  heap array
     int i = minHeap->pos[v];
- 
+
     // Get the node and update its dist value
     minHeap->array[i]->dist = dist;
- 
+
     // Travel up while the complete
     // tree is not heapified.
     // This is a O(Logn) loop
@@ -487,14 +487,14 @@ void decreaseKey(struct MinHeap* minHeap,
                                       (i-1)/2;
         minHeap->pos[minHeap->array[
                              (i-1)/2]->v] = i;
-        swapMinHeapNode(&minHeap->array[i], 
+        swapMinHeapNode(&minHeap->array[i],
                  &minHeap->array[(i - 1) / 2]);
- 
+
         // move to parent index
         i = (i - 1) / 2;
     }
 }
- 
+
 // A utility function to check if a given vertex
 // 'v' is in min heap or not
 bool isInMinHeap(struct MinHeap *minHeap, int v)
@@ -503,7 +503,7 @@ bool isInMinHeap(struct MinHeap *minHeap, int v)
      return true;
    return false;
 }
- 
+
 // A utility function used to print the solution
 void printArr(int dist[], int n)
 {
@@ -511,23 +511,23 @@ void printArr(int dist[], int n)
     for (int i = 0; i < n; ++i)
         printf("%d \t\t %d\n", i, dist[i]);
 }
- 
+
 // The main function that calculates
 // distances of shortest paths from src to all
 // vertices. It is a O(ELogV) function
 void dijkstra(struct Graph* graph, int src)
 {
-     
+
     // Get the number of vertices in graph
     int V = graph->V;
-   
+
     // dist values used to pick
     // minimum weight edge in cut
-    int dist[V];    
- 
+    int dist[V];
+
     // minHeap represents set E
     struct MinHeap* minHeap = createMinHeap(V);
- 
+
     // Initialize min heap with all
     // vertices. dist value of all vertices
     for (int v = 0; v < V; ++v)
@@ -537,7 +537,7 @@ void dijkstra(struct Graph* graph, int src)
                                       dist[v]);
         minHeap->pos[v] = v;
     }
- 
+
     // Make dist value of src vertex
     // as 0 so that it is extracted first
     minHeap->array[src] =
@@ -545,10 +545,10 @@ void dijkstra(struct Graph* graph, int src)
     minHeap->pos[src]   = src;
     dist[src] = 0;
     decreaseKey(minHeap, src, dist[src]);
- 
+
     // Initially size of min heap is equal to V
     minHeap->size = V;
- 
+
     // In the following loop,
     // min heap contains all nodes
     // whose shortest distance
@@ -559,10 +559,10 @@ void dijkstra(struct Graph* graph, int src)
         // minimum distance value
         struct MinHeapNode* minHeapNode =
                      extractMin(minHeap);
-       
+
         // Store the extracted vertex number
         int u = minHeapNode->v;
- 
+
         // Traverse through all adjacent
         // vertices of u (the extracted
         // vertex) and update
@@ -572,7 +572,7 @@ void dijkstra(struct Graph* graph, int src)
         while (pCrawl != NULL)
         {
             int v = pCrawl->dest;
- 
+
             // If shortest distance to v is
             // not finalized yet, and distance to v
             // through u is less than its
@@ -582,7 +582,7 @@ void dijkstra(struct Graph* graph, int src)
               pCrawl->weight + dist[u] < dist[v])
             {
                 dist[v] = dist[u] + pCrawl->weight;
- 
+
                 // update distance
                 // value in min heap also
                 decreaseKey(minHeap, v, dist[v]);
@@ -590,12 +590,12 @@ void dijkstra(struct Graph* graph, int src)
             pCrawl = pCrawl->next;
         }
     }
- 
+
     // print the calculated shortest distances
     printArr(dist, V);
 }
- 
- 
+
+
 // Driver program to test above functions
 int main()
 {
@@ -616,13 +616,13 @@ int main()
     addEdge(graph, 6, 7, 1);
     addEdge(graph, 6, 8, 6);
     addEdge(graph, 7, 8, 7);
- 
+
     dijkstra(graph, 0);
- 
+
     return 0;
 }
 
-Time Complexity: The time complexity of the above code/algorithm looks O(V^2) as there are two nested while loops. If we take a closer look, we can observe that the statements in the inner loop are executed O(V+E) times (similar to BFS). The inner loop has decreaseKey() operation which takes O(LogV) time. So overall time complexity is O(E+V)*O(LogV) which is O((E+V)*LogV) = O(ELogV) 
+Time Complexity: The time complexity of the above code/algorithm looks O(V^2) as there are two nested while loops. If we take a closer look, we can observe that the statements in the inner loop are executed O(V+E) times (similar to BFS). The inner loop has decreaseKey() operation which takes O(LogV) time. So overall time complexity is O(E+V)*O(LogV) which is O((E+V)*LogV) = O(ELogV)
 Note that the above code uses Binary Heap for Priority Queue implementation. Time complexity can be reduced to O(E + VLogV) using Fibonacci Heap. The reason is, that Fibonacci Heap takes O(1) time for decrease-key operation while Binary Heap takes O(Logn) time.
 
 Rules for SPF
@@ -648,7 +648,7 @@ Cases for new nodes being explored
 		x + m > y
 			--> No action
 	> Algorithm should stop when its empty
-	
+
 Phase 3 --> Routing Table Calculation
 -------------------------------------
 
@@ -662,7 +662,7 @@ Proposed Ecosystem for Developing the Protocol Stack
 		Network Layer [IP, IPv6]
 		Data Link Layer [ARP]
 		Physical Layer
-		
+
 		Required Ecosystem
 		--------------------
 		Supportive Base application interface managers, Build System
@@ -673,50 +673,50 @@ Proposed Ecosystem for Developing the Protocol Stack
 		Data structures like linked lists and trees
 		System Supportive libraries ilke Schedulers, Memory Managers , Timers and Locking etc
 		NIC Drivers for Pkt Transmission
-		
+
 		The TCP/IP stack sdk toolkit will partially(as it doesnt supports NICs) it  simulate these.
 
 TARGETS
 --------
 
-Feature 1     --> Adding cli integration for ISIS protocol in the tcp_ip stack sdk toolkit to 
+Feature 1     --> Adding cli integration for ISIS protocol in the tcp_ip stack sdk toolkit to
 		  start and end the initiation for ISIS protocol
 
 	config node <node-name> [yes] protocol isis
 	config node <node-name> [no] protocol isis
-		
-		
+
+
 	Adding entry of the layer 5 protocol in the tcp ip stack sdk toolkit
 
 Makefile
 ----------
-Objects 
+Objects
 	Layer5/isis/isis_cli.o
 
-Layer5/isis/isis_cli.o:Layer5isis_cli.c                                                                                                                                                        
+Layer5/isis/isis_cli.o:Layer5isis_cli.c
 ${CC} ${CFLAGS} -c -I . Layer5/isis/isis_cli.c -o Layer5/isis/isis_cli.o
 
 clean:
-	rm -f Layer5/isis/*.o   
+	rm -f Layer5/isis/*.o
 
 Backend Handler implementation
 --------------------------------
-    Objectives 
+    Objectives
         > Extract the command codes
-        > Parse the data from the buffer to get the data 
-        > Parse the command code in and use it for init and de-init 
+        > Parse the data from the buffer to get the data
+        > Parse the command code in and use it for init and de-init
                 > implement init
                 > implement de-init
-        
 
-        init implement 
-                > fetch the current isis info for the current node 
-                > allocate new node as enabled 
+
+        init implement
+                > fetch the current isis info for the current node
+                > allocate new node as enabled
                 > if its not null then update the information in then network properties graph by swapping the new val of the new node
-                    to the old node 
+                    to the old node
 
         dinit implement
-                > fetch the current isis info for the current node 
+                > fetch the current isis info for the current node
                 > then free the memory for the allocated node
 
 Feature 2
@@ -725,13 +725,13 @@ Feature 2
 Protocol Configuration Holders
 --------------------------------
 
-Needed for holding Configuration files for the node's protocol's at the device and 
+Needed for holding Configuration files for the node's protocol's at the device and
 interface level
 
     Examples: [device-levels]
         > do not generate lsp packets
         > advertise some information in lsp packets
-        >  if protocol is disabled then it disabled on all the interfaces 
+        >  if protocol is disabled then it disabled on all the interfaces
 
     Examples: [interface-levels]
         > Impacting protocol behaviour per interface
@@ -744,43 +744,314 @@ interface level
 
     Add protocol specific node and per-interface level data Configuration holders
 
-        > Add the data structures to isis_rtr.h and isis_intf.h 
+        > Add the data structures to isis_rtr.h and isis_intf.h
             for device and interface levels
 
-        > After adding these add isis_rtr.h's data structure  
+        > After adding these add isis_rtr.h's data structure
           in the node_nw_prop data structure
           because it holds the data at the device levels
-          and now it will be able to hold protocol based device configs 
+          and now it will be able to hold protocol based device configs
           and same for interfaces as well at intf_nw_props {net.h}
 
 
 
 Feature 3 -- > show node <node-name> proto isis
 
-Responible for fetching device level configs of the isis protocol 
+Responible for fetching device level configs of the isis protocol
     > will show isis protocol is enabled or disabled
 
     > Add the main tree in the isis_cli
     > Register as a show command in the isis_cli
     > Add the command codes for checking if isis_show_node_protocol_state is enabled or disabled
-    > Return the status 
+    > Return the status
 
     Test
-    ---- 
+    ----
         enable --> conf node R0 proto isis
         check status --> show node R0 proto isis
         disable --> conf node R0 no proto isis
-        check status --> show node R0 proto isis 
+        check status --> show node R0 proto isis
 
 
-Feature 4 --> conf node <node-name> [no] proto isis interface all 
+Feature 4 --> conf node <node-name> [no] proto isis interface all
 
-            must enable/disable protocol (alloc/free) isis_intf_info on all interfaces of device 
+            must enable/disable protocol (alloc/free) isis_intf_info on all interfaces of device
 
             conf node <node-name> [no] proto isis interface <intf-name>
-            
+
             same thing on a particular interface as well
 
-    Important --> Disabling the protocol on a device must disable protocol on all interfaces also 
+    Important --> Disabling the protocol on a device must disable protocol on all interfaces also
                   Enabling the protocol on a device must not enable protocol at interface level, user should
-                  do it manually through above new clis 
+                  do it manually through above new clis
+
+
+
+Feature 5 --> Packet Exchange Architecture
+
+    Packet Type 1 [Hello Packet Exchange]
+
+    Naming scheme --> R1-eth0 ---> Router-interface of the router
+
+    Proposed contents in the packets
+    1. Rtr ID [loopback interface of the router ]
+    2. HostName [user friendly name of the router ]
+    3. IP address [Ip address through which the packet was sent out]
+    4. IfIndex [Interface ID of the device to identify] --> has to be unique
+    5. Hold-time
+    6. Metric Value
+
+    Example
+    1. 122.1.1.1
+    2. R1
+    3. 10.1.1.1
+    4. 50
+    5. 5 (holding time)
+    6. 10 (cost) can be only configured by the admins
+
+    These packets should be specific from the interface they are coming out.
+
+    Adjaency matrix will be used for these packets as there are neighbours involved.
+
+    High level Implementation
+
+    typedef struct isis_adjancency_t {
+
+        // back pointer to the interface to find out which interface its pointing
+        interface_t *intf;
+        // neighboring loopback address
+        ip_add_t nbr_rtr_id;
+        // neighboring device name
+        unsigned char nbr_name[NODE_NAME_SIZE];
+        // neighboring interface ip
+        ip_add_t nbr_intf_ip;
+        // holding time in sec by the neighbour
+        uint32_t hold_time;
+        // nbr link cost value
+        uint32_t cost;
+        // adjacency state
+        isis_adj_state_t adj_state;
+        // uptime --> how much time has elapsed since the adjacency state has been first
+        // transitioned to the up state
+        time_t uptime;
+        // delete timer
+        timer_event_handle *delete_timer;
+        // expiry timer
+        timer_event_handle *expiry_timer;
+    } isis_adjacency_t;
+
+
+    Adjacency state
+
+    States --> Down , Init, Up
+
+    for first packet received set the state to down
+    for second packet received set the state to init from down
+    for third packet received set the state to up from init
+    if there is some holding time on the interface
+        > if state is up --> set it to down ---> delete it after some time if no hello packet received
+        > if state is down --> no packets are coming for some time --> delete it
+
+    State transition engine --> Adjacency State Machine
+
+    typedef enum isis_adj_state {
+        ISIS_ADJ_STATE_UNKNOW,
+        ISIS_ADJ_STATE_DOWN,
+        ISIS_ADJ_STATE_UP,
+
+    }isis_adj_state_t;
+
+
+    TIMER_SUB LIBRARY --> helping in scheduling the events to be performed in future after some time after some definite period time
+
+    Timers Proposed
+
+    1. Delete timer
+        > delete the adjancency permanently after 5 sec
+
+    2. Expiry timer
+        > holding time
+        > Changing the adjacency state from the up/init state to down state
+        > start the delete timer
+
+
+    Targets to be implemented
+        > hello packet format
+        > manufacturing architecture of hello packets from node and interface data
+        > sending out periodic packet out of protocol enabled interfaces
+        > stopping hello packets when protocol is disabled on the interfaces
+        > Receiving the hello packets on the receipents node
+        > Processing hello packets
+        > Creating adjacency objects from processing information from hello packets
+        > Enhanced version of show command to display the adjacency object attributes
+        > Timer management involved in the adjacency object
+        > Updating the hello packet configs if any changes are made in the generic config by the admin
+        > Adjacency State machine implementation
+
+    The isis protocol packets should be formatted as TLV
+    TLV -> Type length value
+
+    TLV is a mechanism of packaging the data in a type length value order
+
+    Benifits ::
+    1. They are flexible, easy to add and remove the data
+    2. No ties are required to any pre-defined software
+    3. The recipent node can ignore any data which is not recognized by it
+    4. The recipent node can fetch the data which is recognized by it
+
+    TLV example
+
+    Type --> 1    \\ range 0-255 [type is used to identify the tlv it is unique]
+    Length --> 8  \\ length of the value
+    Value --> Purbayan \\
+
+    There can be several tlv that can be defined
+    example tlv of type1, type2, type3
+
+    https://www.cisco.com/c/en/us/support/docs/ip/integrated-intermediate-system-to-intermediate-system-is-is/5739-tlvs-5739.html
+
+
+    TLV type and length are together called TLV overhead
+    TLV from code point of view gives two information
+        > data type of value i:e string, integer, float,
+        > length of the 1 unit of data
+
+    The TLV can contain multiple values
+    The contigous memory that holds the tlv is called the TLV buffer
+
+    Example
+
+                    Type 1
+                    length 64
+                    "isis"
+                    "proto"
+                    type 2
+                    length 128
+                    "is"
+                    "fun"
+                    type 3
+                    length 24
+                    "to"
+                    "use"
+                    "really"
+
+            This is the TLV buffer
+
+            Some macros to iterate through this buffer
+
+    # define TLV_OVERHEAD_SIZE 2 // arbitary value can be changed
+
+    # define ITERATE_TLV_BEGIN(start_ptr, type, length, tlv_ptr, tlv_size) {
+        unsigned int _len = 0;
+        unsigned char _tlv_value_size = 0;
+        for (tlv_ptr = (unsigned char *) start_ptr + TLV_OVERHEAD_SIZE; _len < tlv_size; _len += tlv_value_size + TLV_OVERHEAD_SIZE, tlv_ptr = (tlv_ptr + TLV_OVERHEAD_SIZE + length )) {
+            type = *(tlv_ptr + TLV_OVERHEAD_SIZE);
+            _tlv_value_size = (unsigned char)(*(tlv_ptr - TLV_OVERHEAD_SIZE + sizeof(unsigned char)));
+    # define ITERATE_TLV_END(start_ptr, type, length, tlv_ptr, buffer_size)
+        }
+    }
+
+    This macros can be used to traverse the tlv very easily
+    char *tlv_buffer = ptr to the tlv buffer
+    uint32_t total_size = 222
+
+
+    uint_t type, uint8_t len;
+    char *val;
+    ITERATE_TLV_BEGIN(start_ptr, type, length, tlv_ptr, tlv_size) {
+
+        switch(type) {
+
+            case first_tlv_code:
+                process 'val';
+                break;
+            case second_tlv_code:
+                process 'val';
+                break;
+            ..
+            default
+        }
+
+    } ITERATE_TLV_END(start_ptr, type, length, tlv_ptr, tlv_size)
+
+
+
+    Insertion in TLV
+   -------------------
+	byte *buff  = tlv_buffer_insert_tlv(byte *tlv_buff, uint8_t tlv_no,
+                     uint8_t data_len, byte *data);
+
+	byte *
+	tlv_buffer_insert_tlv(byte  *buff, --> end pointer of the tlv
+									  uint8_t tlv_no, --> what no of tlv [type]
+									  uint8_t data_len, --> length of the data
+									  byte  *data){ --> value of the data
+
+
+		*buff = tlv_no; // tlv nos becomes the new end of the new tlv overhead
+		*(buff+1) = data_len; // after the end the data len is inserted there in the tlv overhead
+		memcpy(buff + TLV_OVERHEAD_SIZE, data, data_len); // fill the tlv
+		return buff + TLV_OVERHEAD_SIZE + data_len; // returns a ptr to the to the end of the tlv that is
+													// inserted in the buffer
+	}
+
+  Searching in TLV
+ -------------------
+
+	byte *
+	tlv_buffer_insert_tlv(byte *tlv_buff, uint8_t tlv_no,
+						 uint8_t data_len, byte *data);
+
+	byte  *
+	tlv_buffer_get_particular_tlv(byte  *tlv_buff, /*Input TLV Buffer this is the start of the tlv buffer */
+						  uint32_t tlv_buff_size,               /*Input TLV Buffer Total Size */
+						  uint8_t tlv_no,                            /*Input TLV Number i:e the types */
+						  uint8_t *tlv_data_len){              /*Output TLV Data len */
+
+		byte tlv_type, tlv_len, *tlv_value = NULL;
+
+		ITERATE_TLV_BEGIN(tlv_buff, tlv_type, tlv_len, tlv_value, tlv_buff_size){
+
+			if(tlv_type != tlv_no) continue;
+			*tlv_data_len = tlv_len;
+			return tlv_value;
+		}ITERATE_TLV_END(tlv_buff, tlv_type, tlv_len, tlv_value, tlv_buff_size);
+
+		*tlv_data_len = 0;
+
+		return NULL;
+	}
+
+Hello Packet Format
+--------------------
+
+Ethernet Header --> ISIS_packet_header --> ISIS_TLV_SECTION --> FCS
+
+No need for FCS [no checksum is implemented ]
+
+APIS for creating hello packets
+-------------------------------
+
+TLV_OVERHEAD_SIZE  2 --> length of the TLV overhead i:e type+length
+
+NODE_NAME_SIZE   16 --> Name of the Node
+
+ETH_HDR_SIZE_EXCL_PAYLOAD --> size of the ethernet header excluding the payload
+
+tcp_ip_get_new_pkt_buffer ( ) --> allocate a new packet to the buffer and returns a pointer at the end of the buffer on the right after the newly inserted packet
+
+tcp_ip_free_pkt_buffer --> remove a packet by taking a pointer to the packet and the size of the packet
+
+layer2_fill_with_broadcast_mac --> takes the mac address in the form a array and fills it up with arbitary value
+
+GET_ETHERNET_HDR_PAYLOAD --> takes a pointer to the start of the ethernet header and returns the ethernet
+payload
+
+tcp_ip_covert_ip_p_to_n --> converts a ip address to binary formats
+
+tcp_ip_covert_ip_n_to_p --> converts the ip address to the normal string formats
+
+tlv_buffer_insert_tlv --> inserts a new data in the tlv
+
+SET_COMMON_ETH_FCS --> takes the start of the ethernet header and the payload size of the ethernet and sets the FCS as 0 as we dont need to implement the checksums
+
