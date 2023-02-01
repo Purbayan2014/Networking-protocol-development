@@ -15,4 +15,5 @@ bool isis_pkt_trap_rule(char *pkt, size_t pkt_size);
 /* the second arg will be the total size of the ethernet header */
 void isis_pkt_recieve(void *arg, size_t arg_size);
 
+byte *isis_prepare_hello_pkt(interface_t *intf, size_t *hello_pkt_size);
 # endif
