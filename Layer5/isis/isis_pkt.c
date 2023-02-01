@@ -77,11 +77,11 @@ byte *isis_prepare_hello_pkt(interface_t *intf, size_t *hello_pkt_size) {
 	
 	byte *temp; /* getting the pointer after the end of the grey region */
 	temp = (byte *)(hello_pkt_hdr + 1);
-
+	node_t *node = intf->att_node;
 	temp = tlv_buffer_insert_tlv(temp, // ptr
 			ISIS_TLV_HOSTNAME,  // type
 			NODE_NAME_SIZE, // size
-			intf->att_node->node_name); // value
+			node->node_name); // value
 	
 	temp = tlv_buffer_insert_tlv(temp, 
 			ISIS_TLV_RTR_ID,
