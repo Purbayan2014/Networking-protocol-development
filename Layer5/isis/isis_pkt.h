@@ -1,9 +1,42 @@
 
 # ifndef __ISIS_PKT__
 # define __ISIS_PKT__ 
+#include "isis_const.h"
+typedef uint16_t isis_pkt_type_t;
 
+typedef struct isis_pkt_ {
 
+    /* The pkt type - Hellos or LSPs */
+    isis_pkt_type_t isis_pkt_type;
+    /* The wired form of pkt */
+    byte *pkt;
+    /* pkt size, including eithernet hdr */
+    size_t pkt_size;
+    /* Rest of the below fields are usually used in the
+    context of LSPs only */
 
+    /* ref count on this pkt */
+    uint16_t ref_count;
+    /* No of interfaces out of which LSP has been
+    Queued to xmit */
+    uint16_t flood_queue_count;
+    /* if set to false, this LSP would not xmit out */
+    bool flood_eligibility;
+    /* glue to attach this lsp pkt to lspdb*/
+    avltree_node_t avl_node_glue;
+    /* Life time timer */
+    timer_event_handle *expiry_timer;
+    /* to check if this LSP is present in lspdb or not */
+    bool installed_in_db;
+} isis_pkt_t;
+
+typedef struct isis_pkt_hdr_{
+
+    isis_pkt_type_t isis_pkt_type;
+    uint32_t seq_no; /* meaningful only for LSPs */
+    uint32_t rtr_id;
+    isis_pkt_hdr_flags_t flags;
+} isis_pkt_hdr_t;
 
 
 // adding the packet classification rule 

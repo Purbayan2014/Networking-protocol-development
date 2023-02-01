@@ -6,6 +6,7 @@
 */
 
 # include "../../tcp_public.h"
+#include "isis_intf.h"
 # include "isis_pkt.h"
 # include "isis_const.h"
 
@@ -32,7 +33,7 @@ byte *isis_prepare_hello_pkt(interface_t *intf, size_t *hello_pkt_size) {
 	 *  The architecture has been manufactured with reference to the hello packet 
 	 *  diagram 
 	 * */
-
+	isis_pkt_hdr_t *hello_pkt_hdr;
 	/* total size required by the isis hello packet */
 	/* considering the size of the payload because it considers the size of the payload 
 	 * as well as the ethernet packet header */
@@ -48,8 +49,8 @@ byte *isis_prepare_hello_pkt(interface_t *intf, size_t *hello_pkt_size) {
 		4 ; /* type cost value */
 
 	/* hello packet size = size of the ethernet header + payload size */
-	*hello_pky_size = ETH_HDR_SIZE_EXCL_PAYLOAD  /* dest mac + source mac + type field + fcfs (but without the payload) */
-		+ eth_hdr_payload_size 
+	*hello_pkt_size = ETH_HDR_SIZE_EXCL_PAYLOAD  /* dest mac + source mac + type field + fcfs (but without the payload) */
+		+ eth_hdr_payload_size;
 	
 	/* allocate the new packet memory */
 		/* typecastting to ethernet header as the packet starts with ethernet header */
@@ -61,15 +62,15 @@ byte *isis_prepare_hello_pkt(interface_t *intf, size_t *hello_pkt_size) {
 	memset(hello_eth_hdr->src_mac.mac, 0, sizeof(mac_add_t)); // source mac address
 	hello_eth_hdr->type = ISIS_ETH_PKT_TYPE; // type field of the ethernet hdr
 	
-	isis_pkt_hdr_t *hello_pkt_hdr;
+	
 	/* getting a pointer to the payload of the ethernet header to manipulate the data in the isis_pkt_hdr*/
-	hello_pkt_hdr = (isis_pkt_hdr_t *)GET_ETH_HDR_PAYLOAD(hello_eth_hdr);
+	hello_pkt_hdr = (isis_pkt_hdr_t *)GET_ETHERNET_HDR_PAYLOAD(hello_eth_hdr);
 
 	hello_pkt_hdr->isis_pkt_type = ISIS_PTP_HELLO_PKT_TYPE;
-	hello_pkt_hdr->seq_no = 0 /* as it is not required */
+	hello_pkt_hdr->seq_no = 0; /* as it is not required */
 	/* fetching the router's loop back address and then returning it into a integer format */
-	hello_pkt_hdr->rtr_id = tcp_ip_convert_ip_p_to_n(NODE_LO_ADDR(intf->att_node));
-	hello_pkt_hdr->flags = 0
+	hello_pkt_hdr->rtr_id = tcp_ip_covert_ip_p_to_n(NODE_LO_ADDR(intf->att_node));
+	hello_pkt_hdr->flags = 0;
 	
 
 	/* filling the TLV's one by one */
@@ -77,24 +78,24 @@ byte *isis_prepare_hello_pkt(interface_t *intf, size_t *hello_pkt_size) {
 	byte *temp; /* getting the pointer after the end of the grey region */
 	temp = (byte *)(hello_pkt_hdr + 1);
 
-	temp = tlv_buffer_insert(temp, // ptr
-			ISIS_TLB_HOSTNAME,  // type
+	temp = tlv_buffer_insert_tlv(temp, // ptr
+			ISIS_TLV_HOSTNAME,  // type
 			NODE_NAME_SIZE, // size
 			intf->att_node->node_name); // value
 	
-	temp = tlv_buffer_insert(temp, 
+	temp = tlv_buffer_insert_tlv(temp, 
 			ISIS_TLV_RTR_ID,
 			4,
 			(byte *)(&hello_pkt_hdr->rtr_id));
 
 	/* fetching the ip address in the integer format */
-	uint32_t ip_addr_intf = tcp_ip_convert_ip_p_to_n(IF_IP(intf));
-	temp = tlv_buffer_insert(temp,
+	uint32_t ip_addr_intf = tcp_ip_covert_ip_p_to_n(IF_IP(intf));
+	temp = tlv_buffer_insert_tlv(temp,
 			ISIS_TLV_IF_IP,
 			4,
 			(byte *)&ip_addr_intf);
 
-	temp = tlv_buffer_insert(temp, 
+	temp = tlv_buffer_insert_tlv(temp, 
 			ISIS_TLV_IF_INDEX,
 			4,
 			(byte *)(&IF_INDEX(intf)));
@@ -103,13 +104,13 @@ byte *isis_prepare_hello_pkt(interface_t *intf, size_t *hello_pkt_size) {
 	uint32_t hold_time = ISIS_INTF_HELLO_INTERVAL(intf) * ISIS_HOLD_TIME_FACTOR;
 
 
-	temp = tlv_buffer_insert(temp,
+	temp = tlv_buffer_insert_tlv(temp,
 			ISIS_TLV_HOLD_TIME,
 			4,
 			(byte *)&hold_time);
 
 	uint32_t cost = ISIS_INTF_COST(intf);
-	temp = tlv_buffer_insert(temp,
+	temp = tlv_buffer_insert_tlv(temp,
 			ISIS_TLV_METRIC_VAL,
 			4,
 			(byte *)&cost);
