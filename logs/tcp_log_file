@@ -1,0 +1,9 @@
+isis_schedule_lsp_pkt_generation (375) :R1: ISIS(LSPDB MGMT) : LSP pkt generation task scheduled 0x7f7f90005260, reason : ISIS EVENT ADMIN CONFIG CHANGED
+isis_generate_lsp_pkt (327) :R1: ISIS(LSPDB MGMT) : Self-LSP Generation task 0x7f7f90005260 triggered
+isis_install_lsp (106) :R1: ISIS(LSPDB MGMT) : Lsp Recvd : 122.1.1.1-1(0x7f7f900071c1) on intf (null), old lsp : (null)-0((nil))
+isis_install_lsp (132) :R1:	 ISIS(LSPDB MGMT) : Event : ISIS EVENT SELF FRESH LSP
+isis_install_lsp (149) :R1:	 ISIS(LSPDB MGMT) : Event : ISIS EVENT SELF FRESH LSP : LSP to be Added in LSPDB and flood
+isis_add_lsp_pkt_in_lspdb (794) :R1: ISIS(LSPDB MGMT) : LSP 122.1.1.1-1 added to lspdb
+isis_install_lsp (303) :R1: ISIS(LSPDB MGMT) : LSPDB Updated  for new Lsp Recvd : 122.1.1.1-1, old lsp : (null)-0, Event : ISIS EVENT SELF FRESH LSP
+isis_parse_lsp_tlvs (425) :R1: ISIS(LSPDB MGMT) : Lsp Recvd : 122.1.1.1-1, old lsp : (null)-0, Event : ISIS EVENT SELF FRESH LSP
+	need_spf : 1  on_demand_tlv : 0  need_on_demand_flood : 0

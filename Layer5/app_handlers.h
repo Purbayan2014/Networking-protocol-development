@@ -22,9 +22,14 @@ nmp_config_cli_tree(param_t *param);
 int
 nmp_show_cli_tree(param_t *param);
 
-// isis integration
-int isis_config_cli_tree(param_t *param);
+/*isis protocol CLI registration fns*/
+int
+isis_config_cli_tree(param_t *param);
 
-int isis_show_cli_tree(param_t *param);
+int
+isis_show_cli_tree(param_t *param) ;
+
+int
+isis_clear_cli_tree(param_t *param) ;
 
 #endif /* __APP_HANDLERS__ */

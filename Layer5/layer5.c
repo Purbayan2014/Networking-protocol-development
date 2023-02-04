@@ -1,9 +1,9 @@
 /*
  * =====================================================================================
  *
- *       Filename:  Layer5.c
+ *       Filename:  layer5.c
  *
- *    Description:  This file represents the application making use of our virtual TCP/IP stack
+ *    Description:  This file represents the Test application to test graph topology creation
  *
  *        Version:  1.0
 
@@ -11,9 +11,9 @@
  *       Compiler:  gcc
  *
  *         Author: Purbayan Majumder
-
- *        This file is part of the TCP/IP Stack distribution (.
- *        Copyright (c)Purbayan Majumder
+ *        
+ *        
+.
  *        This program is free software: you can redistribute it and/or modify
  *        it under the terms of the GNU General Public License as published by  
  *        the Free Software Foundation, version 3.

@@ -116,3 +116,34 @@ conf node R1 proto ?
 conf node R1 proto isis 
 conf node R1 proto isis
 conf node R1 proto isis ?
+conf node R1 proto isis
+conf node R1 proto isis int eth2
+show node R1 int stat
+show node R1 int stat
+show help
+show help
+show topology
+show topo node R1 
+run node R2 ping 122.1.1.3
+conf node R1 traceoptions flag ?
+conf node R1 traceoptions flag /
+all
+cd 
+run node R1 ping 122.1.1.2
+show topo
+run node R2 ping 122.1.1.1
+show top
+conf node R1 traceoptions flag /
+no-all
+cd 
+show node R1 log-status
+conf node R1 proto isis interface all
+conf node R1 proto isis
+conf node R1 proto isis interface all 
+show node R1 log-status
+show node R1 /
+?
+protocol /
+?
+isis
+cd 

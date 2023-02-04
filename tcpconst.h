@@ -48,6 +48,7 @@ typedef enum{
 #define ICMP_PRO        1
 #define ICMP_ECHO_REQ   8
 #define ICMP_ECHO_REP   0
+#define PROTO_ISIS      0x83
 #define MTCP            20
 #define USERAPP1        21
 #define VLAN_8021Q_PROTO    0x8100
@@ -73,6 +74,8 @@ static inline unsigned char *
 proto_name_str (uint16_t proto) {
 
     switch(proto) {
+        case PROTO_ISIS:
+            return "isis";
         case PROTO_STATIC:
             return "static";
         case PROTO_ARP:
