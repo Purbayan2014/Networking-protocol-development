@@ -82,7 +82,7 @@ So that the data from the source to the destination can reach the node
 equally through each of them to the destination
 
 Phase 1 --> Building the input graph
---------------------------------------
+    --------------------------------------
 	> Exchanging packets between the nodes
 	> Building database regarding the neighbours
 		> Every routing device should know its neighbours
@@ -1054,4 +1054,46 @@ tcp_ip_covert_ip_n_to_p --> converts the ip address to the normal string formats
 tlv_buffer_insert_tlv --> inserts a new data in the tlv
 
 SET_COMMON_ETH_FCS --> takes the start of the ethernet header and the payload size of the ethernet and sets the FCS as 0 as we dont need to implement the checksums
+
+
+Packet Capturing and logging Architecture
+-------------------------------------------
+
+The architecture should be proposed to work in such a way that the tcp ip stack should be able to capture the packet before the physical layer, which means that even before the
+packets are reaching the destined destination the tcp ip stack should log the packets in the log files.
+
+
+    Objectives implemented
+    -----------------------
+    1. Printing the packets that are ingressing and eggressing out of the interface
+    2. Logging it just above the physical layer
+    3. Parsing the tlv and the headers of the isis hello packets
+    4. Printing the contents of the isis hello packets
+
+    Architecture in details
+    ------------------------
+
+    For printing the packet contents we can use the API that has been implemented for tracing the packets
+     >  nfc_register_for_packet_tracing(ISIS_ETH_PKT_TYPE, isis_print_pkt), where the isis_print_pkt is of type :
+        a. typedef void(*nfc_cb)(void *, size_t);
+
+    nfc_register_for_packet_tracing(ISIS_ETH_PKT_TYPE, isis_print_pkt) ---> Its telling that if the isis packet is of type ISIS_ETH_PKT_TYPE then print the packet
+
+    For packet logging we can use isis_print_hello_packet fn() to log the packets into the log files
+
+Logging internal Traces
+------------------------
+
+Traces are very useful while logging events and debugging
+
+Example
+-------
+
+func --> void isis_enable_protocol_on_interface(interface_t *intf);
+
+Inside this func if we want to check if the protcol is enabled on the interface or not then we can just write this following part when the protocol is getting enabled
+
+sprintf(tlb, "ISIS PROTOCOL IS ENABLED ON THE INTERFACE")
+tcp_trace(intf->att_node, tlb);
+
 

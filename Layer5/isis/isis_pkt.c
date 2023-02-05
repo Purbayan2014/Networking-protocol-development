@@ -569,21 +569,37 @@ isis_print_hello_pkt(byte *buff,
 void
 isis_print_pkt(void *arg, size_t arg_size) {
 
+    /*
+        > first obtain the memory buffer of the packet which contains all the juicy stuff
+          > using the data structure pkt_info_t [This data structure contains 4 data members]
+
+        We are gonna write these information of the packet into the memory buffer 
+        because while printing the logs these buffer will contain all the vital information
+
+    */
     byte *buff;
     size_t pkt_size;
     pkt_info_t *pkt_info;
     isis_pkt_hdr_t *pkt_hdr;
-
-    pkt_info = (pkt_info_t *)arg;
-	buff = pkt_info->pkt_print_buffer;
-	pkt_size = pkt_info->pkt_size;
+    
+    pkt_info = (pkt_info_t *)arg; // packet args
+	buff = pkt_info->pkt_print_buffer; // the packet buffer 
+	pkt_size = pkt_info->pkt_size; // packet size 
+    //         pkt_info -> pkt is the main payload
+    // which is getting typecasted into the isis_pkt_hdr data type
+    // Here the ethernet packet header is getting excluded 
     pkt_hdr = (isis_pkt_hdr_t *)(pkt_info->pkt);
-
+    
+    // The no of bytes that will be written for the packet buffer  
     pkt_info->bytes_written = 0;
 	assert(pkt_info->protocol_no == ISIS_ETH_PKT_TYPE);
-
+    // The isis packet type
     isis_pkt_type_t pkt_type = pkt_hdr->isis_pkt_type; 
 
+    /*
+        Now based on the packet type 
+        the amount of buffer written will change 
+    */
     switch(pkt_type) {
         case ISIS_PTP_HELLO_PKT_TYPE:
             pkt_info->bytes_written += isis_print_hello_pkt(buff, pkt_hdr, pkt_size);
