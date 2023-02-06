@@ -34,10 +34,12 @@ isis_process_hello_pkt(node_t *node,
                        ethernet_hdr_t *hello_eth_hdr,
                        size_t pkt_size) {
 
+    /*processing hello packets*/
     uint8_t intf_ip_len;
     char *if_ip_addr_str;
     isis_pkt_hdr_t *hello_pkt_hdr;
-
+    
+    // reject the packet if the proto is not enabled on the interface
     if (!isis_node_intf_is_enable(iif)) return;
 
     /* Use the same fn for recv qualification as well */
@@ -73,7 +75,8 @@ isis_process_hello_pkt(node_t *node,
     if (!if_ip_addr_int) goto bad_hello;
 
      if_ip_addr_str = tcp_ip_covert_ip_n_to_p(*if_ip_addr_int, 0);
-
+    // rejecting the packet if the neighbr int ip addr 
+    // does not fall in the same subnet as receipent interface
     if (!is_same_subnet(IF_IP(iif), 
                        iif->intf_nw_props.mask, 
                        if_ip_addr_str)){
@@ -88,6 +91,8 @@ isis_process_hello_pkt(node_t *node,
         }
         goto bad_hello;
     }
+
+    // iif --> iif is the interface on which the hello packet is received 
     isis_update_interface_adjacency_from_hello (iif, hello_tlv_buffer, tlv_buff_size);
     return ;
 
@@ -102,6 +107,9 @@ isis_process_lsp_pkt(node_t *node,
                      ethernet_hdr_t *lsp_eth_hdr,
                      size_t pkt_size) {
 
+   /*
+    processing the lsp packets
+   */
     uint32_t *seq_no;
     isis_lsp_pkt_t *new_lsp_pkt;
     isis_intf_info_t *intf_info;
