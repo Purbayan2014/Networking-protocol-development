@@ -281,6 +281,8 @@ isis_update_interface_adjacency_from_hello(
         }
     } ITERATE_TLV_END(hello_tlv_buffer, tlv_type, tlv_len, tlv_value, tlv_buff_size);
 
+    // if the adjacency is already in a new state and a new good hello packet arrives
+    // then do the subsequent changes according to the adjacency state transition diagram
     if(new_adj) {
         isis_adjacency_start_delete_timer(adjacency);
         isis_dynamic_intf_grp_update_on_adjacency_create (adjacency);
@@ -401,6 +403,9 @@ void
 isis_change_adjacency_state(
             isis_adjacency_t *adjacency,
             isis_adj_state_t new_adj_state) {
+    
+    // isis state transition diagram
+
 
     isis_intf_info_t *intf_info;
     node_t *node = adjacency->intf->att_node;
