@@ -32,6 +32,7 @@ isis_timer_expire_down_adjacency_cb(void *arg, uint32_t arg_size){
     if (!arg) return;
 
     isis_adjacency_t *adjacency = (isis_adjacency_t *)arg;
+    // destroyimg the timer that was attached to the adjacency
     timer_de_register_app_event(adjacency->expiry_timer);
     adjacency->expiry_timer = NULL;
 
@@ -87,7 +88,7 @@ isis_adjacency_stop_expiry_timer(
     }
 
     timer_de_register_app_event(adjacency->expiry_timer);
-    adjacency->expiry_timer = NULL;
+    adjacency->expiry_timer = NULL; // removing any dangling pointer
     sprintf(tlb, "%s : Adjacency %s Expiry timer stopped\n",
         ISIS_ADJ_MGMT, isis_adjacency_name(adjacency));
     tcp_trace(adjacency->intf->att_node, adjacency->intf, tlb);
@@ -103,14 +104,14 @@ isis_adjacency_set_uptime(isis_adjacency_t *adjacency) {
 static void
 isis_adjacency_start_delete_timer(
         isis_adjacency_t *adjacency) {
-
+   // if the timer is already running do nothing
     if(adjacency->delete_timer){
         return;
     }
-
+    // or else invoke the timer 
     adjacency->delete_timer = timer_register_app_event(
                                     node_get_timer_instance(adjacency->intf->att_node),
-                                    isis_timer_expire_delete_adjacency_cb,
+                                    isis_timer_expire_delete_adjacency_cb, // timer expiry callback function
                                     (void *)adjacency, sizeof(isis_adjacency_t),
                                     ISIS_ADJ_DEFAULT_DELETE_TIME,
                                     0);
