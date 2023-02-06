@@ -187,7 +187,15 @@ isis_update_interface_adjacency_from_hello(
         interface_t *iif,
         byte *hello_tlv_buffer,
         size_t tlv_buff_size) {
-
+    
+    /* updates the adjacency matrix for the interface of the receiving hello packet 
+    
+  Algorithm: 
+   > if isis_adjacency doesnt exists on the iif them create a new one in DOWN STATE
+   > iterating over the hello_tlv_buffer and copy all the 6 tlvs values from hello to adjacency members
+   > also keep track if there is an change in any attribute of existing adjacency in step 2 (bool nbr_attr_changed)
+   > keep track if adj is newly created (bool new_adj)
+    */ 
     char * router_id_str;
     uint8_t tlv_data_len;
     bool new_adj = false;
@@ -209,10 +217,11 @@ isis_update_interface_adjacency_from_hello(
 
     adjacency = isis_find_adjacency_on_interface(iif, *router_id_int);
 
+   // if there is no adjacency then create a new one in down state 
     if(!adjacency){
         adjacency = (isis_adjacency_t *)XCALLOC(0, 1, isis_adjacency_t);
         isis_init_adjacency(adjacency);
-        adjacency->intf = iif;
+        adjacency->intf = iif; // binding the adjacency to the owning interface
         glthread_add_next(ISIS_INTF_ADJ_LST_HEAD(iif), &adjacency->glue);
         new_adj = true;
         router_id_str = tcp_ip_covert_ip_n_to_p(*router_id_int, 0);
@@ -226,7 +235,7 @@ isis_update_interface_adjacency_from_hello(
 
     byte tlv_type, tlv_len, *tlv_value = NULL;
     ITERATE_TLV_BEGIN(hello_tlv_buffer, tlv_type, tlv_len, tlv_value, tlv_buff_size){
-        
+    // for each tlv checking if the value is different from the value held in hello tlv buffer        
         switch(tlv_type){
             case ISIS_TLV_HOSTNAME:
                 if (memcmp(adjacency->nbr_name, tlv_value, tlv_len)) {
