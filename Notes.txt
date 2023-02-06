@@ -1170,3 +1170,51 @@ Both the timers cannnot run at the same time.
 
 
 
+Show command enhancement
+---------------------------
+
+Displaying the adjacency timer status
+
+
+APIs that are needed are :
+ > wt_get_remamining_time
+ > hrs_min_sec
+
+Function to be enhanced
+ > isis_show_adjacency
+
+Adjacency State Transition Diagram
+------------------------------------
+
+The state of the adjacency
+ > not exist
+ > down
+ > init
+ > up
+ > delete
+
+
+   Prposed architecture
+   --------------------
+   > when the adjacency is in non existant state if it receives a good hello packet --> isis_adjacency_start_delete_timer() and move to down state
+   > when the adjacency is in down state and receives a good hello packet --> then update the adjacency state to init state and fire these 2 apis
+                    > isis_adjacency_stop_delete_timer()
+                    > isis_adjacency_start_expiry_timer()
+   > when the adjacency is in init state and receives a good hello packet ---> update the adjacency state and fire these 2 apis
+                    > isis_adjacency_refresh_expiry_timer()
+                    > update the timer too
+   > when the adjacency is in up state and receives a good hello packet --> isis_adjacency_referesh_expiry_timer()
+   > If the adjacency is already is in up state and the expiry timer is fired --->
+             > update the adjacency state to down state
+             > isis_adjacency_start_delete_timer()
+             > isis_adjacency_stop_expiry_timer()
+   > If the adjacency is already is in init state and the expiry timer is fired --->
+             > update the adjacency state to down state
+             > isis_adjacency_start_delete_timer()
+             > isis_adjacency_stop_expiry_timer()
+   > If the adjacency is in either of the states of down , init or up and the admin disables the protocol on the interface
+             > in case of down or up fire isis_adjacency_stop_delete_timer()
+             > in case of init timer fire isis_adjacency_stop_expiry_timer()
+             > free the adjacency object in each case
+
+   The cycle goes on....
