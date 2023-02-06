@@ -147,3 +147,38 @@ protocol /
 ?
 isis
 cd 
+show help
+conf node R1 proto isis /
+interface eth2
+cd 
+conf node R2 proto isis
+conf node R2 proto isis /
+interface eth3
+cd 
+conf node R1 ?
+conf node R1 trace /
+?
+flag /
+?
+all
+stdout
+cd 
+show node R1 ?
+show node R1 log-status
+conf node R1 ?
+conf node R1 traceoptions /
+?
+flag ?
+cd 
+conf node R1 proto isis
+conf node R1 proto /
+?
+isis /
+?
+cd
+conf node R1 trace /
+conf node R1 proto isis
+conf node R2 proto isis
+conf node R1 proto isis interface eth2
+conf node R2 proto isis interface eth3
+show node R1 proto isis
