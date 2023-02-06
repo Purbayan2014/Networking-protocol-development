@@ -147,17 +147,21 @@ isis_pkt_recieve(void *arg, size_t arg_size) {
     isis_pkt_hdr_t *pkt_hdr;
     pkt_notif_data_t *pkt_notif_data;
     isis_node_info_t *node_info;
-
+    
+    /*
+      pkt_notiF_data wraps up the data for all the packet that are received at an interface
+    */ 
     pkt_notif_data = (pkt_notif_data_t *)arg;
 
-    node        = pkt_notif_data->recv_node;
-    iif         = pkt_notif_data->recv_interface;
-    eth_hdr     = (ethernet_hdr_t *) pkt_notif_data->pkt;
+    node        = pkt_notif_data->recv_node; // receiving node  
+    iif         = pkt_notif_data->recv_interface; // receiving interface  
+    eth_hdr     = (ethernet_hdr_t *) pkt_notif_data->pkt; 
     pkt_size    = pkt_notif_data->pkt_size;
 	hdr_code    = pkt_notif_data->hdr_code;	
 
     if (hdr_code != ETH_HDR) return;
-    
+   
+    // only process the packet if the protocol is enabled on the node  
     if (!isis_is_protocol_enable_on_node(node)) {
         return;
     }
@@ -165,7 +169,8 @@ isis_pkt_recieve(void *arg, size_t arg_size) {
     pkt_hdr = (isis_pkt_hdr_t *)GET_ETHERNET_HDR_PAYLOAD(eth_hdr);
 
     isis_pkt_type_t isis_pkt_type = pkt_hdr->isis_pkt_type;
-
+   
+    // processing based on the type of the packets 
     switch(isis_pkt_type) {
 
         case ISIS_PTP_HELLO_PKT_TYPE:
