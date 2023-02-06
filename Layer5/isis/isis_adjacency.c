@@ -369,7 +369,8 @@ isis_show_adjacency( isis_adjacency_t *adjacency,
         adjacency->cost);
 
     PRINT_TABS(tab_spaces);
-
+    
+    // Timer status
     if (adjacency->expiry_timer) {
         printf("Expiry Timer Remaining : %u msec\n",
             wt_get_remaining_time(adjacency->expiry_timer));
