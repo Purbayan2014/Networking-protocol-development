@@ -1096,4 +1096,77 @@ Inside this func if we want to check if the protcol is enabled on the interface 
 sprintf(tlb, "ISIS PROTOCOL IS ENABLED ON THE INTERFACE")
 tcp_trace(intf->att_node, tlb);
 
+Processing Hello Packets
+--------------------------
+
+Entry point of the packets
+----------------------------
+
+void isis_pkt_receive(void  *arg, size_t arg_size) ----> Classification of the packets that whether it is a hello packet or a lsp packet
+-------> Then process the packet accordingly using these 2 apis
+  > isis_process_hello_pkt(node_t * node, interface_t *intf, ethernet_hdr_t *hello_eth_hdr, size_t pkt_size)
+  > isis_process_isp_pkt(node_t *node, interface_t *intf, ethernet_hdr_t *isp_eth_hdr, size_t pkt_size)
+
+Validation checks
+------------------
+
+static void isis_process_hello_packet
+ > reject if the proto is not enabled on the interface
+ > reject if the pkt of the intf is not qualifies i:e no ip address has been assigned on the interface
+ > reject if the destination mac addr is not the broadcast addr
+ > reject if the isis_tlv_intf_ip not present in hello pkt
+ > reject if the neighboring intf ip addr does not fall in same subnet as the receipent interface
+ > accept the packet :
+    > create or update the interface adjacency from hello packet tlv contents
+
+Adjacency Object Creation
+---------------------------
+
+Proposed Algorithm
+--------------------
+
+> if isis_adjacency_t doesn't exists then create a new one in down state
+> iterating over hello_tlv_buffer and copying all the 6 tlvs values from hello to adjacency members
+> track if there is change in any attribute of existing adjacency in step 2 (bool nbr_attr_changed)
+> keep track if adj is newly created (bool new_adj)
+
+Adjacency Timers --> [expiry and delete timers]
+-----------------
+
+Architecture of the delete timer
+--------------------------------
+ > Init state -> It should start automatically when the adjacency object is in down state
+ > duration -> The proposed duration should be 5 sec
+ > Action performed -> Delete the adjacency object permanently
+ > Cancelled -> It should get cancelled if the adjacency is moved out of the down state or if it is deleted by the action of an admin [proto disabled on a intf]
+ > Refresh -> It should be never be repeated automatically
+
+This timer's main purpose is to give the adjacency object 5 sec to survive after 5 sec its getting deleted permanentlY
+
+Architecture of the expiry timer
+---------------------------------
+ > Init state -> It should be started when the adj is moved to init or up state
+ > duration --> It should be proposed as per the holding time
+ > Action --> It should move the adjacency state to down and start the delete timer
+ > Cancelled --> It can be cancelled if its getting deleted by an admin
+ > Refreshed --> It should only be refreshed if there is good hello packet
+
+The purpose of this timer is to not let the adjacency object stay in the up state if there is no good packet arriving until the holding time
+
+Both the timers cannnot run at the same time.
+
+        Proposed APIs for the timers
+        -----------------------------
+
+        Delete timers
+             > static void isis_adjancency_start_delete_timer(isis_adjacency_t *adjancency);
+             > static void isis_adjancency_stop_delete_timer(isis_adjacency_t *adjancency);
+
+        Expiry timers
+             > static void isis_adjacency_start_expiry_timer(isis_adjacency_t *adjacency);
+             > static void isis_adjacency_stop_expiry_timer(isis_adjacency_t *adjacency);
+             > static void isis_adjacency_refresh_timer(isis_adjacency_t *adjacency);
+
+
+
 
