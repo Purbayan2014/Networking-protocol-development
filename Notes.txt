@@ -1217,4 +1217,49 @@ The state of the adjacency
              > in case of init timer fire isis_adjacency_stop_expiry_timer()
              > free the adjacency object in each case
 
-   The cycle goes on....
+   The cycle goes on...
+
+Interface Config Changes
+--------------------------
+The protocols must listen to the generic config changes events from lower layers of the TCP/IP stack.
+The application protocol ISIS must react to this config change and update the hello packet processing.
+Only the admin should be able to make the changes.
+
+	High level design 
+       -------------------
+
+       The interface manager module of the TCP/IP stack must register all the necessary changes for the application
+       layer protocols.
+
+	Interface Events registration
+        ------------------------------
+   
+        isis_interface_updates 
+
+Protocol Shutdown
+-------------------
+
+
+conf node <node-name> no proto isis --> already there
+
+But we have to implment to shutdown all the protocol : 
+ > all the isis data structures must be freed
+    > Node level
+           > interface level
+               > free adj
+               > free periodic hello timer
+                  > check_and_delete isis_intf_info
+    > check_and_delete isis_node_info
+
+ for this we have to enhance the 
+ isis_de_init_(node_t *node) func
+
+
+Guidelines
+----------
+ > delete the child objects
+ > delete the parent objects
+ > free the parent objects using check delete APIS
+ > follow bottom_up approach for object deletion
+
+ 
