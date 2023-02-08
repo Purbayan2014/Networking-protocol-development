@@ -346,7 +346,9 @@ isis_one_time_registration() {
  nfc_register_for_pkt_tracing is checking if the ethernet header is of type of ISIS_ETH_PKT_TYPE and then commands the protocol's debugging 
  architecture to process the packet using isis_print_pkt and log the packets in the logging file 
 */
-    nfc_intf_register_for_events(isis_interface_updates);
+    nfc_intf_register_for_events(isis_interface_updates); // all the interface changes get registered by this API through the 
+							  // invoking of the API isis_interface_updates and feed all the 
+							  // relevant changes as the args to this function
     nfc_register_for_pkt_tracing(ISIS_ETH_PKT_TYPE, isis_print_pkt);
 }
 

@@ -258,6 +258,17 @@ isis_show_interface_protocol_state(interface_t *intf) {
 
 static void
 isis_handle_interface_up_down (interface_t *intf, bool old_status) {
+/*
+ *  Algorithm
+ *  ---------
+ *   > examine the status of the interface using IF_IS_UP(intf)
+ *   > when the interface is enabled (old_status == false)
+ *           > start sending hellos (isis_start_sending_hellos()) only if the interface qualifies (isis_interface_qualify_to_send_hello_packets)
+ *   > when the interface is shut down (old_status == true)
+ *     > stop sending hellos
+ *     > delete the adjacency on this interface
+ * * */
+
 
     bool any_adj_up = false;
 
@@ -326,7 +337,14 @@ isis_handle_interface_ip_addr_changed (interface_t *intf,
 
 void
 isis_interface_updates(void *arg, size_t arg_size) {
-
+// on any change this function gets invoked
+/*
+ *To process the data from the void *arg , the intf_notif_data_t should be understand
+ it contains three pointers
+       > interface_t *interface [The new configuration can be retrived from the interface]
+       > intf_prop_changed_t *old_intf_prop_changed --> old config value of the interface
+       > uint32 flags --> Tells which property of the interface gets changed [ip, or whatever up down status]
+ * */
 	intf_notif_data_t *intf_notif_data = 
 		(intf_notif_data_t *)arg;
 
