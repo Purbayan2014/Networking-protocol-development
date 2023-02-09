@@ -1263,3 +1263,277 @@ Guidelines
  > follow bottom_up approach for object deletion
 
  
+Link State Packets 
+-------------------
+
+LSP Architecture Diagram
+-------------------------
+
+Lsp Pkt Fmt<---------Ethernet Payload----------->FCS
+   Eth hdr   ISIS_PKT_HDR +  ISIS_TLV_SECTION    0
+
+
+
+TYPE-ISIS_TLV_HOSTNAME
+LENGTH-NODE_NAME_SIZE
+        R2
+TYPE-ISIS_IS_REACH_TLV[22]
+       LENGTH
+    ADJACENCY Data
+
+The link state packets also contains information about the adjacenct object which is 
+packed using the tlv ISIS_IS_REACH_TLV [22]
+
+No of Tlv 22 encoded - No of UP adjacencies
+TLV 22 enocodes Adjacency object information attached to intf
+
+Format of TLV 22
+------------------
+
+#if 0
++-----------------------+--------Parent TLV Begin--
+|       Type = 22       |1B
++-----------------------+
+|       Total Length    |1B ----------------------------------^
++-----------------------+                                     |
+|    Nbr Lo Addr (int)  |4B                                   |
++-----------------------+                                     |
+|      Metric/Cost      |4B                                   |
++-----------------------+                                     |
+|   Total SubTLV Length |1B ----------------------------------+-------+
++-----------------------+---------SubTLVs Begin---            |       |
+|      SubTLV type1     |1B                                   |       |
++-----------------------+                                     |       |
+|   SubTLV type1 len    |1B                                   |       |
++-----------------------+                                     |       |
+|   SubTLV type1 Value  |<SubTLV type1 len>                   |       |
++-----------------------+                                     |       |
+|      SubTLV type2     |1B                                   |       |
++-----------------------+                                     |       |
+|   SubTLV type2 len    |1B                                   |       |
++-----------------------+                                     |       |
+|   SubTLV type2 Value  |<SubTLV type2 len>                   |       |
++-----------------------+                                     |       |
+|      SubTLV type3     |1B                                   |       |
++-----------------------+                                     |       |
+|   SubTLV type3 len    |1B                                   |       |
++-----------------------+                                     |       |
+|   SubTLV type3 Value  |< SubTLV type3 len>                  |       |
++-----------------------+--------SubTLVs Ends-----------------v-------v
++-----------------------+--------Parent TLV Ends---                    
+
+SUBTLVs :
+SubTLV 4 : Length 8B : Value = <4B local if index><4B Remote if index>
+SubTLV 6 : Length 4B : Value = Local Ip Address (4B)
+SubTLV 8 : Length 4B : Value = Nbr IP Address (4B)
+
+
+TYPE-ISIS_TLV_HOSTNAME
+LENGTH-NODE_NAME_SIZE
+  R2
+TYPE-ISIS_IS_REACH_TLV(22)
+LENGTH-31
+  // value portion begins
+  122.1.1.1 [neighbor to loopback addr]
+  10 [metric]
+  Sub Tlv length = 22
+
+The second piece of information that the tlv 22 encodes is the remote if index and 
+the local if index , these remote if index and the local if index gets encoded as the 
+sub tlv
+
+
+SUB TYPE - ISIS_TLV_IF_INDEX [4]
+LENGTH - 8
+60 [local if index]
+50 [remote if index]
+SUB TYPE - ISIS_TLV_LOCAL_IP [6]
+LENGTH - 4
+10.1.1.2
+SUB TYPE - ISIS_TLV_REMOTE_IP [8]
+LENGTH - 4
+10.1.1.1
+
+TLV 22 --> nbr to loop back adr  + subtlv 4 + subtlv 6 + subtlv 8
+
+Encoding the tlv 22
+---------------------
+
+API for returing the length of tlv 22 in bytes
+uint8_t isis_nbr_tlv_encode_size(isis_adjacency_t *adjacency,
+uint8_t *subtlv_len) /* total length of all subtlb with in a tlv 22 */
+
+
+API for returning the end of the buffer ptr after encoding/insertig a tlv 22
+byte *isis_encode_nbr_tlv(
+    isis_adjacency_t adjacency,
+    byte *buff, // output buffer ptr to encode tlv in 
+    uint16_t *tlv_len // length encoded (tlv overhead * data len )
+)
+
+Management structure of the link state packets
+----------------------------------------------
+
+The ISIS protocol would have to manage LSP packts (its own as well its remote )
+  > update the self lsp contents 
+  >  periodic Flooding
+  > install/uninstalling the link state database
+  > link state database synchronisation
+
+typedef uint16_t isis_pkt_type_t;
+
+/* management strcurture of the lsp packet*/
+typedef struct isis_pkt_ {
+
+    /* The wired form of pkt */
+    byte *pkt;
+    /* pkt size, including eithernet hdr */
+    size_t pkt_size;
+    
+    /* ref count on this pkt */
+    uint16_t ref_count;
+    /* No of interfaces out of which LSP has been
+    Queued to xmit */
+    uint16_t flood_queue_count;
+    /* if set to false, this LSP would not xmit out */
+    bool flood_eligibility;
+    /* glue to attach this lsp pkt to lspdb*/
+    avltree_node_t avl_node_glue;
+    /* Life time timer */
+    timer_event_handle *expiry_timer;
+    /* to check if this LSP is present in lspdb or not */
+    bool installed_in_db;
+} isis_lsp_pkt_t;
+
+Important Macros and utils 
+----------------------------
+
+Macro which represents the size of the ethernet hdr fields excluding payload 
+    > ETH_HDR_SIZE_EXCL_PAYLOAD
+Total size in bytes the TLV ISIS_TLV_HOSTNAME will take in an LSP pkt 
+    > ETH_HDR_SIZE_EXCL_PAYLOAD
+macro which represents maximum size of the pkt buffer 
+    > MAX_PACKET_BUFFER_SIZE
+APIs provided by tcpip_stack library to malloc a new pkt buffer and free it 
+    > static inline char * tcp_ip_get_new_pkt_buffer(uint32_t pkt_size);
+API provided by tcpip_stack library to initialize mac address with broadcast mac
+    > static inline void tcp_ip_free_pkt_buffer(char *pkt, uint32_t pkt_size);
+pointer to start of the isis_pkt_hdr and TLV Section of the LSP pkt where the 
+chr *ptr is the pointer which points to the start off the ethernet hdr of the lsp 
+packet 
+    >  isis_pkt_hdr_t *lsp_pkt_hdr = (isis_pkt_hdr_t *)GET_ETHERNET_HDR_PAYLOAD( (ethernet_hdr_t *) ptr);
+Macro that is to be used to initialized the FCS field of ethernet hdr with value K
+    > SET_COMMON_ETH_FCS(eth_hdr, pkt_size, k);
+
+
+The Sequence nos
+-------------------
+
+This seq nos was a member of the isis_pkt_hdr , it is not that useful when it comes
+processing the hello packets but when we are dealing with the lsp packets it is of utmost importance
+
+typedef struct isis_pkt_hdr_ {
+  isis_pkt_type isis_pkt_type;
+  uint32_t seq_no;
+  uint32_t str_id;
+  isis_pkt_hdr_flags_t flgas; 
+} isis_pkt_hdr_t;
+
+When device generates a new LSP packet from scratch, this seq nos is incremented first
+and then this should be feed itno the lsp packet Rules
+
+    node_info->seq_no++;
+    lsp_pkt_hdr->seq_no-node_info->seq_no;
+
+This seq_no is used to control the flooding of the lsps in the topology
+Higher the seq nos the younger is said to be the lsp 
+
+
+LSP Packet Generation 
+----------------------
+
+ISIS Protocol after creating the lsp packet will cache its own lsp packet so that 
+  > it has quick access to its own lsp packet
+  > re-transmit lsp packet as and when required 
+
+  typedef struct node_info_ {
+    /* pointer to self lsp packet */
+    isis_lsp_pkt_t *self_lsp_pkt;
+  } isis_node_info_t;
+
+Creating Fresh LSP packet 
+--------------------------
+
+static void
+isis_create_fresh_lsp_pkt(node_t *node)
+    
+    Algorithm
+    ----------
+    > calculate the total size of the new lsp packet
+    > malloc the buffer for new lsp packet
+    > fill the contents of the new lsp packet
+    > discard the old lsp packet
+    > cache the new lsp packet
+
+Fetching the addresses of the router id in the isis_pkt_hdr and also getting the 
+----------------------------------------------------------------------------------
+address of the seq_no stored in the isis_pkt_hdr_t 
+---------------------------------------------------
+
+Given a pointer to the LSP Pkt Structure ( isis_lsp_pkt_t * ) , 
+getting the address of the router id stored in the isis_pkt_hdr_t as per the below API.
+
+uint32_t *
+
+isis_get_lsp_pkt_rtr_id(isis_lsp_pkt_t *lsp_pkt) {
+
+
+    ethernet_hdr_t *eth_hdr = (ethernet_hdr_t *)lsp_pkt->pkt;
+
+    isis_pkt_hdr_t *lsp_hdr = (isis_pkt_hdr_t *)(eth_hdr->payload);
+
+
+   return &lsp_hdr->rtr_id;
+
+}
+
+Given a pointer to the LSP Pkt Structure ( isis_lsp_pkt_t * ) , 
+get the address of the seq_no stored in the isis_pkt_hdr_t as per the below API.
+
+uint32_t *
+
+isis_get_lsp_pkt_seq_no(isis_lsp_pkt_t *lsp_pkt) {
+
+
+    ethernet_hdr_t *eth_hdr = (ethernet_hdr_t *)lsp_pkt->pkt;
+
+    isis_pkt_hdr_t *lsp_hdr = (isis_pkt_hdr_t *)(eth_hdr->payload);
+
+
+   return &lsp_hdr->seq_no;
+
+}
+
+Printing the name of the lsp packet
+-------------------------------------
+
+byte*
+
+isis_print_lsp_id(isis_lsp_pkt_t *lsp_pkt) {
+
+
+static byte lsp_id[32];
+
+
+memset(lsp_id, 0, sizeof(lsp_id));
+
+uint32_t *rtr_id = isis_get_lsp_pkt_rtr_id(lsp_pkt);
+
+uint32_t *seq_no = isis_get_lsp_pkt_seq_no(lsp_pkt);
+
+
+sprintf(lsp_id, "%s-%u", tcp_ip_covert_ip_n_to_p(*rtr_id, 0), *seq_no);
+
+return lsp_id;
+
+}
