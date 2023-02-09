@@ -6,6 +6,7 @@
 
 typedef uint16_t isis_pkt_type_t;
 
+/* management strcurture of the lsp packet*/
 typedef struct isis_pkt_ {
 
     /* The wired form of pkt */

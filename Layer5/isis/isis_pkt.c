@@ -241,8 +241,10 @@ isis_create_fresh_lsp_pkt(node_t *node) {
     else {
         
         /* TLVs */
+        /* accomodating the size of the host name TLV */
         lsp_pkt_size_estimate += TLV_OVERHEAD_SIZE + NODE_NAME_SIZE; /* Device name */
         /* Nbr TLVs */
+        /* accomodating the size of all the TLV22*/
         lsp_pkt_size_estimate +=  isis_size_to_encode_all_nbr_tlv(node);
     }
 
@@ -276,15 +278,19 @@ TLV_ADD_DONE:
 
     node_info->seq_no++;
 
+    // mallocing the buffer size for the new lsp packet
     ethernet_hdr_t *eth_hdr = (ethernet_hdr_t *)
                                 tcp_ip_get_new_pkt_buffer(lsp_pkt_size_estimate);
     
+    // filling the contents of the new lsp packet
     memset (eth_hdr->src_mac.mac, 0, sizeof(mac_add_t));
     layer2_fill_with_broadcast_mac(eth_hdr->dst_mac.mac);
     eth_hdr->type = ISIS_ETH_PKT_TYPE;
 
+    // filling the isis_pkt_hdr
     lsp_pkt_hdr = (isis_pkt_hdr_t *)GET_ETHERNET_HDR_PAYLOAD(eth_hdr);
 
+    // filling the lsp packet hdr
     /* pkt type */
     lsp_pkt_hdr->isis_pkt_type = ISIS_LSP_PKT_TYPE;
     lsp_pkt_hdr->seq_no = node_info->seq_no;
@@ -298,6 +304,7 @@ TLV_ADD_DONE:
         SET_BIT(lsp_pkt_hdr->flags, ISIS_LSP_PKT_F_OVERLOAD_BIT);
     }
 
+    // filling up the tlvs 
     byte *lsp_tlv_buffer = (byte *)(lsp_pkt_hdr + 1);
     
     if (!is_proto_shutting_down) {
@@ -318,8 +325,10 @@ TLV_ADD_DONE:
         }
     }
     
+    // freeing up the old lsp packet if exists
     SET_COMMON_ETH_FCS(eth_hdr, lsp_pkt_size_estimate, 0);
 
+    // filling up with the new lsp packet i:e caching it
     node_info->self_lsp_pkt = XCALLOC(0, 1, isis_lsp_pkt_t);
     node_info->self_lsp_pkt->flood_eligibility = true;
     node_info->self_lsp_pkt->pkt = (byte *)eth_hdr;
