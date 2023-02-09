@@ -597,12 +597,17 @@ uint8_t
 isis_nbr_tlv_encode_size(isis_adjacency_t *adjacency,
                          uint8_t *subtlv_len) {
 
+    /*computes the length of the tlv 22 from the adjacency object 
+    and returns the value in the subtlv_len*/
+
     uint32_t ptlv_data_len = 0;  /* parent tlv data len */
-    uint32_t total_subtlv_len = 0;
+    uint32_t total_subtlv_len = 0; /* total subtlv_len */
 
     *subtlv_len = 0;
 
     if (adjacency->adj_state != ISIS_ADJ_STATE_UP) return 0;
+
+    /*overhead = type + length */
 
     ptlv_data_len += TLV_OVERHEAD_SIZE;
     ptlv_data_len += 4;         /* loopback address */
@@ -610,8 +615,15 @@ isis_nbr_tlv_encode_size(isis_adjacency_t *adjacency,
     ptlv_data_len += 1;         /* total Sub TLV len */
 
      /* encode subtlv 4 */
+     /* tlv_overhead_size = sub type + length 
+         + 60 + 50 
+         
+         60 and 50 are the value of the sub type tlv 
+         60 for local if index
+         50 for remote if index */
     total_subtlv_len += TLV_OVERHEAD_SIZE + 4 + 4;
 
+     /* and the same for the other tlvs 6 and 8 */
     /* encode subtlv 6 */
     total_subtlv_len += TLV_OVERHEAD_SIZE + 4;
 
@@ -634,12 +646,15 @@ isis_encode_nbr_tlv(isis_adjacency_t *adjacency,
                     byte *buff,           /* Output buffer to encode tlv in */
                     uint16_t *tlv_len) {  /* output : length encoded (tlv overhead + data len)*/
 
+    // returning the end of the buffer ptr after encoding/insertig a tlv 22
+
     uint8_t subtlv_len;
     uint32_t four_byte_data;
     uint32_t if_indexes[2];
 
     byte *start_buff = buff;
 
+    // total length of the tlv
     *tlv_len = isis_nbr_tlv_encode_size(adjacency, &subtlv_len);
 
     /* Now encode the data into buff */
@@ -669,8 +684,8 @@ isis_encode_nbr_tlv(isis_adjacency_t *adjacency,
        Encoding SubTLV 4
     */
 
-    if_indexes[0] = IF_INDEX(adjacency->intf);
-    if_indexes[1] = adjacency->remote_if_index;
+    if_indexes[0] = IF_INDEX(adjacency->intf); // local interface index 
+    if_indexes[1] = adjacency->remote_if_index; // remote interface index
 
     start_buff = tlv_buffer_insert_tlv(start_buff,
                         ISIS_TLV_IF_INDEX, 8,
@@ -695,6 +710,12 @@ isis_encode_nbr_tlv(isis_adjacency_t *adjacency,
 
 byte *
 isis_encode_all_nbr_tlvs(node_t *node, byte *buff) {
+
+    /*
+        Encodes all the adjacent objects in up state on a given node in a given
+        buffer 
+    */
+
 
     glthread_t *curr;
     interface_t *intf;
@@ -724,6 +745,13 @@ isis_encode_all_nbr_tlvs(node_t *node, byte *buff) {
 
 uint16_t
 isis_size_to_encode_all_nbr_tlv(node_t *node) {
+
+
+    /*
+        Computes the size in bytes that is required to encode all the adjacenct
+        objects on a node as TLV 22 in a tlv buffer .The adjacenct objects are 
+        not counted as in the UP state.
+    */
 
     glthread_t *curr;
     interface_t *intf;
