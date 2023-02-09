@@ -713,7 +713,8 @@ isis_encode_all_nbr_tlvs(node_t *node, byte *buff) {
 
     /*
         Encodes all the adjacent objects in up state on a given node in a given
-        buffer 
+        buffer . The api returs the pointer to the end of the buffer after 
+        writing all the contents
     */
 
 
