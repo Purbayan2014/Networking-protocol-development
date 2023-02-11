@@ -1537,3 +1537,141 @@ sprintf(lsp_id, "%s-%u", tcp_ip_covert_ip_n_to_p(*rtr_id, 0), *seq_no);
 return lsp_id;
 
 }
+
+Printing out the contents of the lsdb
+---------------------------------------
+
+	show node <node-name> proto isis lsdb
+         > uint32_t isis_show_one_lsp_pkt_detail(byte *buff, isis_pkt_hdr *lsp_pkt_hdr, size_t pkt_size); --> This function is serving two purposes i:e 
+          [priting the contents of the lsp packets and also tracing them as well]
+               > creates a fresh lsp packet
+               > check first if the buffer is null or not , if null then print it into the console
+               > or else use the sprintf to print inside the buffer
+               > return the nos of output in bytes
+         
+
+       Note --> isis_show_one_lsp_pkt_detail() can be used to trace the the lsp packets by the tracing info
+
+The proposed of waiting printing the detail should be like this ---->
+
+isis_show_one_lsp_pkt_detail ( ) formatted output sample :
+
+LSP : 122.1.1.0(9) [router_id(seq_no)] comes from the isis_pkt_hdr
+Flags :  
+TLVs
+        TLV137 Host-Name : R0 [tlv_id]
+        TLV22  Len : 31 [type length value]
+                Nbr Rtr ID : 122.1.1.1   Metric : 10   SubTLV Len : 22
+        SubTLV4  Len : 8   if-indexes [local : 101, remote : 102]
+        SubTLV6  Len : 4   Local IP : 10.1.1.1
+        SubTLV8  Len : 4   Remote IP : 10.1.1.2
+        TLV22  Len : 31
+                Nbr Rtr ID : 122.1.1.5   Metric : 10   SubTLV Len : 22
+        SubTLV4  Len : 8   if-indexes [local : 103, remote : 104]
+        SubTLV6  Len : 4   Local IP : 80.1.1.1
+        SubTLV8  Len : 4   Remote IP : 80.1.1.2
+CLI returned
+
+Asynchronous Programming
+-------------------------
+
+It shall be implemented using dispatch queue technique.Asynchronous programming is also taken as a part of multi-threading and coroutines
+
+The goals of the asynchronous programming 
+ > event loop schedules the computation to be formed in future [computation is nothing but the unit of the work] 
+ > It is also called as the event dispatcher 
+ 
+
+Internal functional of the event loop
+-------------------------------------
+
+> It is ran by a thread called the event loop thread and schedules two events suspend and the thread events and this thread never terminates
+> Next we have the task array which is represented by the function F1, arg :: F2, arg :: F3, arg .............................. Fn, arg
+> The task array is implemented as the doubly linked list. 
+
+So in simpler words event loop is nothing but a event looop thread + the task array, this isolates the other application threads.
+It is a separate indepedent thread acting on its task array.It works like a machine, picking up the function Gn + arg (computation)
+from its task array and placing it on execution stack
+
+It seralizes all computations, and discharge them one by one
+It continues to do so until the task array is empty, it resumes again if some application thread(s) submits new computation 
+to task array
+
+Kinda producer-consumer problem
+
+Producer is the application thread and the consumer is the event loop thread
+As these are two diff threads we need to protect the enqueue and the dequeue operations so we use a mutex.
+
+If the task array is empty ihe event loop thread will be suspension.
+
+Problems solved by this 
+-------------------------
+   > When a devie is running a ISIS protocol implementation . For example if the device is running there are 3 LSPs from source nodes of the topology
+         > update link state database
+         > runnning the spf algo
+         > calculating the spf routes
+         > updating the routing table
+  A lot of time is taken for thse processing . If the lsp packet incomeing rate is constant and last one device cpu would be high, thus the device gets 
+  overloaded.If the device asynchronously process all incoming LSP packets, since the time to process one lsp packet take significant time, rest of the 
+  lsp packets may throttle the incoming queue and get dropped
+
+  Solution
+       - If the device would have deferred the spf computation for a short while, and only update the lsdb with all the 3 lsps and trigger spf only after 3 lsp 
+         is updated in lsdb, then device would not have to redundant work i:e save the cpu.
+
+
+Related APIs
+--------------
+ The logically isolated and non trival computations shall be performed asynchronously (by deferring it from the main flow)
+   These include 
+      > LSP packet generation
+      > Flooding LSPs out of all local interfaces
+      > Triggering SPF algo
+      > Route calculations and installation 
+
+   computation = function - args
+   
+   invoking the function F asynchronously using 
+    > task_t *task =  task_create_new_job(
+			ARG, // pointer to the args 
+			F,  // pointer to the function
+			TASK_ONE_SHOT); // constant
+
+
+   cancelling the task
+    > task_cancel_job(task);
+    > after cancelling the task > task = NULL;
+   
+   POC 
+   ----
+
+   Synchronously
+   ---------------
+  
+   void foo() {
+   printf("\nThis ");
+   choco(arg);
+   printf("is my fav !!"); 
+
+   }
+
+   void choco(void *arg) {
+     printf("Chocolate");
+   }
+
+   
+   Result --> This chocolats is my fav !!!
+
+   Asynchronously
+   ------------------
+  
+   void foo() {
+  
+   printf("\nThis ");
+   task_t *choco_task = task_create_new_task(arg, choco); // defer
+   printf(" is my fav ");
+   }
+
+   Result --> This is my fav chocolate
+
+   
