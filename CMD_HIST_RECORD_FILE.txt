@@ -194,3 +194,21 @@ show node R2 proto isis
 conf node R1 interface eth2 ip-add /
 20.1.1.5 24
 cd 
+conf node R1 proto isis
+conf node R1 proto isis interface eth2
+conf node R2 proto isis
+conf node R2 proto isis interface eth3
+show node R1 proto isis
+show node R1 proto isis lsdb
+conf node R1 proto isis
+conf node R1 proto isis interface eth2
+conf node R2 proto isis
+conf node R2 proto isis interface eth3
+show node R1 proto isis lsdb
+show node R2 proto isis lsdb
+conf node R1 proto isis
+conf node R2 proto isis
+conf node R1 proto isis interface eth2
+conf node R2 proto isis interface eth3
+show node R1 proto isis lsdb
+show node R2 proto isis lsdb
