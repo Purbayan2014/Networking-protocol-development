@@ -287,7 +287,7 @@ isis_show_handler(param_t *param,
             cli_out (node->print_buff, rc);
             break;
         case CMDCODE_SHOW_NODE_ISIS_PROTOCOL_LSDB:
-            isis_show_lspdb (node);
+            isis_show_lspdb (node); /* show node <node-name> proto isis lsdb */
         break;
         case CMDCODE_SHOW_NODE_ISIS_PROTOCOL_EVENT_COUNTERS:
             isis_show_event_counters (node);
@@ -520,6 +520,7 @@ isis_show_cli_tree(param_t *param) {
                 set_param_cmd_code(&if_name, CMDCODE_SHOW_NODE_ISIS_PROTOCOL_ONE_INTF);
             }
             {
+		/* show node <node_name> proto isis lsdb */
                 static param_t lsdb;
 	            init_param(&lsdb, CMD, "lsdb", isis_show_handler, 0, INVALID, 0, "isis protocol");
 	            libcli_register_param(&isis_proto, &lsdb);

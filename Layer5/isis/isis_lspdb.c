@@ -565,13 +565,17 @@ isis_show_one_lsp_pkt( isis_lsp_pkt_t *lsp_pkt, byte *buff) {
 void
 isis_show_one_lsp_pkt_detail(node_t *node, char *rtr_id_str) {
 
+    /* printing the contents of the lsp packets */
     int rc = 0;
     isis_lsp_pkt_t *lsp_pkt;
     uint32_t rtr_id_int;
+
+    // printable memory buffer 
     char *buff = node->print_buff;
 
     byte tlv_type, tlv_len, *tlv_value = NULL;
 
+    // fetching the lspdb
     avltree_t *lspdb = isis_get_lspdb_root(node);
 
     if (!lspdb) return;
@@ -607,6 +611,7 @@ isis_show_one_lsp_pkt_detail(node_t *node, char *rtr_id_str) {
                                         ETH_HDR_SIZE_EXCL_PAYLOAD -
                                         sizeof(isis_pkt_hdr_t)) ;
 
+    // iterating over the tlv until the tlvs getting exhausted 
     ITERATE_TLV_BEGIN(lsp_tlv_buffer, tlv_type,
                         tlv_len, tlv_value,
                         lsp_tlv_buffer_size) {
@@ -617,9 +622,9 @@ isis_show_one_lsp_pkt_detail(node_t *node, char *rtr_id_str) {
                         tlv_type, tlv_value);
             break;
             case ISIS_IS_REACH_TLV:
-                 rc += isis_print_formatted_nbr_tlv22( buff + rc,
+                 rc += isis_print_formatted_nbr_tlv22( buff ? buff + rc:NULL, // pointer to the start the tlv 22
                         tlv_value - TLV_OVERHEAD_SIZE,
-                        tlv_len + TLV_OVERHEAD_SIZE);
+                        tlv_len + TLV_OVERHEAD_SIZE); // size of the tlv 22
                 break;
             case ISIS_TLV_ON_DEMAND:
                 rc += sprintf(buff + rc, "\tTLV%d On-Demand TLV : %hhu\n",

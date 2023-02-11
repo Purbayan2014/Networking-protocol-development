@@ -786,7 +786,7 @@ isis_size_to_encode_all_nbr_tlv(node_t *node) {
  /* Return the no of bytes written into out_buff */
 uint16_t
 isis_print_formatted_nbr_tlv22(byte *out_buff, 
-                             byte *nbr_tlv_buffer,
+                             byte *nbr_tlv_buffer, // tlv 22
                              uint8_t tlv_buffer_len) {
 
     uint16_t rc = 0;
@@ -802,6 +802,7 @@ isis_print_formatted_nbr_tlv22(byte *out_buff,
         rc += sprintf(out_buff + rc,
                       "\tTLV%d  Len : %d\n", tlv_type, tlv_len);
 
+	// extracting the ip addr, metric and the subtlv length
         ip_addr_int = *(uint32_t *)tlv_value;
         metric = *(uint32_t *)(((uint32_t *)tlv_value) + 1);
         subtlv_len = *(uint8_t *)((uint32_t *)tlv_value + 2);
