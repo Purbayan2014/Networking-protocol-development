@@ -1,5 +1,6 @@
 #include "../../tcp_public.h"
 #include "isis_cmdcodes.h"
+// #include "isis_events.h"
 #include "isis_pkt.h"
 #include "isis_rtr.h"
 #include "isis_intf.h"
@@ -587,6 +588,7 @@ isis_clear_handler(param_t *param,
     node_t *node;
     tlv_struct_t *tlv;
     char *node_name = NULL;
+    bool any_adj_up = false;
 
     int cmdcode = EXTRACT_CMD_CODE(tlv_buf);
 
@@ -617,7 +619,13 @@ isis_clear_handler(param_t *param,
             ITERATE_NODE_INTERFACES_BEGIN(node, intf) {
 
                 if (!isis_node_intf_is_enable(intf)) continue;
-                    isis_delete_all_adjacencies(intf);  
+                    isis_delete_all_adjacencies(intf);
+            //    > if the adjancies that are getting deleted is in up state then regen a fresh lsp packet */
+                // any_adj_up = isis_any_adjacency_up_on_interface(intf);
+                if (any_adj_up) {
+                    isis_schedule_lsp_pkt_generation(intf->att_node
+                    , isis_event_admin_config_changed);
+                }
             }  ITERATE_NODE_INTERFACES_END(node, intf);
         }
         break;

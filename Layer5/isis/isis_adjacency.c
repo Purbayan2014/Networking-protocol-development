@@ -240,7 +240,7 @@ isis_update_interface_adjacency_from_hello(
         switch(tlv_type){
             case ISIS_TLV_HOSTNAME:
                 if (memcmp(adjacency->nbr_name, tlv_value, tlv_len)) {
-                    regen_lsp = true;
+                    regen_lsp = true; // generating fresh lsp packet
                     memcpy(adjacency->nbr_name, tlv_value, tlv_len);
                 }
             break;
@@ -260,7 +260,7 @@ isis_update_interface_adjacency_from_hello(
             case ISIS_TLV_IF_INDEX:
                 if (adjacency->remote_if_index != *(uint32_t *)tlv_value) {
                     memcpy((byte *)&adjacency->remote_if_index, tlv_value, tlv_len);
-                    regen_lsp = true;
+                    regen_lsp = true; // generating fresh lsp packet
                 }
             break;
             case ISIS_TLV_HOLD_TIME:
@@ -269,7 +269,7 @@ isis_update_interface_adjacency_from_hello(
             case ISIS_TLV_METRIC_VAL:
                 if (adjacency->cost != *((uint32_t *)tlv_value)) {
                     adjacency->cost = *((uint32_t *)tlv_value);
-                    regen_lsp= true;
+                    regen_lsp= true; // generating fresh lsp packet
                 }
             break;
             case ISIS_TLV_IF_MAC:
@@ -297,8 +297,9 @@ isis_update_interface_adjacency_from_hello(
         isis_change_adjacency_state(adjacency, adj_next_state);
     }
 
-   if (regen_lsp && !force_bring_down_adjacency) {
-       sprintf(tlb, "%s : ISIS Adjacency attributes changed, regen LSP \n",  ISIS_ADJ_MGMT);
+   if (regen_lsp && !force_bring_down_adjacency) { /* If the regenration has been asked for the lsp packets then regen it using 
+                isis_schedule_lsp_pkt_generation */
+       sprintf(tlb, "%s : ISIS Adjacency attr/ibutes changed, regen LSP \n",  ISIS_ADJ_MGMT);
         tcp_trace(iif->att_node, iif, tlb);
         isis_schedule_lsp_pkt_generation(iif->att_node, isis_event_nbr_attribute_changed);
    }
@@ -471,7 +472,7 @@ isis_change_adjacency_state(
                         isis_restart_reconciliation_timer(node);
                     }
                     else {
-                        isis_schedule_lsp_pkt_generation(node, isis_event_adj_state_changed);
+                        isis_schedule_lsp_pkt_generation(node, isis_event_adj_state_changed); // fresh lsp packet generation 
                     }
 
                     isis_update_layer2_mapping_on_adjacency_up(adjacency);
@@ -500,7 +501,8 @@ isis_change_adjacency_state(
                         isis_restart_reconciliation_timer(node);
                     }
                     else {
-                        isis_schedule_lsp_pkt_generation(node, isis_event_adj_state_changed);
+                        isis_schedule_lsp_pkt_generation(node, isis_event_adj_state_changed); // fresh lsp packet generation as these needs to be withdrawn from 
+                        // lsp packet as tlv 22 
                     }
                     isis_update_layer2_mapping_on_adjacency_down(adjacency);
                     break;
