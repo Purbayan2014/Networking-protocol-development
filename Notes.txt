@@ -1675,3 +1675,30 @@ Related APIs
    Result --> This is my fav chocolate
 
    
+LSP Packet Generation API
+--------------------------
+
+Function --> isis_create_fresh_lsp_pkt
+
+> This api must be invoked when the isis hello packet has received different hostname, if-index or metric value then what is there in local adjacency object
+  on the recipent interface [ isis_update_interface_adjacency_from_hello() ] --> isis_update_interface_adjacency_from_hello() must be invoked as soon as we notice any 
+  changes in any of the above mentioned attributes.
+
+> User config changed which results in content of lsp packet to update
+  > interface up/down [ isis_handle_interface_up_down() ]  {Take care only of the down state as when the admin brings up the interface in the first place in up state
+                                                                no adjancies are present }
+  > IP address change [ isis_handle_interface_ip_addr_change() ]
+
+> Adjacency goes from init->up or from up-> down [ isis_change_adjacency_state() ]
+> Adjacency in up state is deleted via CLI --> clear node <node-name> proto isis adjacency
+   [ isis_delete_adjacency() ]
+
+> Protocol intialization in the node level [ isis_init() ]
+> Periodically []
+
+> Remove the api call which has been placed in the show cli backend handler 
+
+     Note ---> Only Adjancies in the up state are as tlv 22
+
+
+
