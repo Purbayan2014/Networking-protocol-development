@@ -293,7 +293,7 @@ isis_start_lsp_pkt_periodic_flooding(node_t *node) {
       
     node_info->periodic_lsp_flood_timer = 
                 timer_register_app_event(node_get_timer_instance(node),
-                isis_timer_wrapper_lsp_flood,
+                isis_timer_wrapper_lsp_flood, // wrapper fn getting invoked periodically
                 (void *)node,
                 sizeof(node_t),
                 node_info->lsp_flood_interval * 1000,

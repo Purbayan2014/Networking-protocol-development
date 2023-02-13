@@ -331,7 +331,7 @@ isis_init(node_t *node ) {
     ted_init_teddb(node_info->ted_db, 0);
     nfc_ipv4_rt_subscribe(node, isis_ipv4_rt_notif_cbk);
 
-    isis_start_lsp_pkt_periodic_flooding(node);
+    isis_start_lsp_pkt_periodic_flooding(node); /* periodic flooding of lsp packets */
 
     ISIS_INCREMENT_NODE_STATS(node,
             isis_event_count[isis_event_admin_config_changed]);

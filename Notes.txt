@@ -1225,7 +1225,7 @@ The protocols must listen to the generic config changes events from lower layers
 The application protocol ISIS must react to this config change and update the hello packet processing.
 Only the admin should be able to make the changes.
 
-	High level design 
+	High level design
        -------------------
 
        The interface manager module of the TCP/IP stack must register all the necessary changes for the application
@@ -1233,8 +1233,8 @@ Only the admin should be able to make the changes.
 
 	Interface Events registration
         ------------------------------
-   
-        isis_interface_updates 
+
+        isis_interface_updates
 
 Protocol Shutdown
 -------------------
@@ -1242,7 +1242,7 @@ Protocol Shutdown
 
 conf node <node-name> no proto isis --> already there
 
-But we have to implment to shutdown all the protocol : 
+But we have to implment to shutdown all the protocol :
  > all the isis data structures must be freed
     > Node level
            > interface level
@@ -1251,7 +1251,7 @@ But we have to implment to shutdown all the protocol :
                   > check_and_delete isis_intf_info
     > check_and_delete isis_node_info
 
- for this we have to enhance the 
+ for this we have to enhance the
  isis_de_init_(node_t *node) func
 
 
@@ -1262,8 +1262,8 @@ Guidelines
  > free the parent objects using check delete APIS
  > follow bottom_up approach for object deletion
 
- 
-Link State Packets 
+
+Link State Packets
 -------------------
 
 LSP Architecture Diagram
@@ -1281,7 +1281,7 @@ TYPE-ISIS_IS_REACH_TLV[22]
        LENGTH
     ADJACENCY Data
 
-The link state packets also contains information about the adjacenct object which is 
+The link state packets also contains information about the adjacenct object which is
 packed using the tlv ISIS_IS_REACH_TLV [22]
 
 No of Tlv 22 encoded - No of UP adjacencies
@@ -1320,7 +1320,7 @@ Format of TLV 22
 +-----------------------+                                     |       |
 |   SubTLV type3 Value  |< SubTLV type3 len>                  |       |
 +-----------------------+--------SubTLVs Ends-----------------v-------v
-+-----------------------+--------Parent TLV Ends---                    
++-----------------------+--------Parent TLV Ends---
 
 SUBTLVs :
 SubTLV 4 : Length 8B : Value = <4B local if index><4B Remote if index>
@@ -1338,8 +1338,8 @@ LENGTH-31
   10 [metric]
   Sub Tlv length = 22
 
-The second piece of information that the tlv 22 encodes is the remote if index and 
-the local if index , these remote if index and the local if index gets encoded as the 
+The second piece of information that the tlv 22 encodes is the remote if index and
+the local if index , these remote if index and the local if index gets encoded as the
 sub tlv
 
 
@@ -1367,7 +1367,7 @@ uint8_t *subtlv_len) /* total length of all subtlb with in a tlv 22 */
 API for returning the end of the buffer ptr after encoding/insertig a tlv 22
 byte *isis_encode_nbr_tlv(
     isis_adjacency_t adjacency,
-    byte *buff, // output buffer ptr to encode tlv in 
+    byte *buff, // output buffer ptr to encode tlv in
     uint16_t *tlv_len // length encoded (tlv overhead * data len )
 )
 
@@ -1375,7 +1375,7 @@ Management structure of the link state packets
 ----------------------------------------------
 
 The ISIS protocol would have to manage LSP packts (its own as well its remote )
-  > update the self lsp contents 
+  > update the self lsp contents
   >  periodic Flooding
   > install/uninstalling the link state database
   > link state database synchronisation
@@ -1389,7 +1389,7 @@ typedef struct isis_pkt_ {
     byte *pkt;
     /* pkt size, including eithernet hdr */
     size_t pkt_size;
-    
+
     /* ref count on this pkt */
     uint16_t ref_count;
     /* No of interfaces out of which LSP has been
@@ -1405,22 +1405,22 @@ typedef struct isis_pkt_ {
     bool installed_in_db;
 } isis_lsp_pkt_t;
 
-Important Macros and utils 
+Important Macros and utils
 ----------------------------
 
-Macro which represents the size of the ethernet hdr fields excluding payload 
+Macro which represents the size of the ethernet hdr fields excluding payload
     > ETH_HDR_SIZE_EXCL_PAYLOAD
-Total size in bytes the TLV ISIS_TLV_HOSTNAME will take in an LSP pkt 
+Total size in bytes the TLV ISIS_TLV_HOSTNAME will take in an LSP pkt
     > ETH_HDR_SIZE_EXCL_PAYLOAD
-macro which represents maximum size of the pkt buffer 
+macro which represents maximum size of the pkt buffer
     > MAX_PACKET_BUFFER_SIZE
-APIs provided by tcpip_stack library to malloc a new pkt buffer and free it 
+APIs provided by tcpip_stack library to malloc a new pkt buffer and free it
     > static inline char * tcp_ip_get_new_pkt_buffer(uint32_t pkt_size);
 API provided by tcpip_stack library to initialize mac address with broadcast mac
     > static inline void tcp_ip_free_pkt_buffer(char *pkt, uint32_t pkt_size);
-pointer to start of the isis_pkt_hdr and TLV Section of the LSP pkt where the 
-chr *ptr is the pointer which points to the start off the ethernet hdr of the lsp 
-packet 
+pointer to start of the isis_pkt_hdr and TLV Section of the LSP pkt where the
+chr *ptr is the pointer which points to the start off the ethernet hdr of the lsp
+packet
     >  isis_pkt_hdr_t *lsp_pkt_hdr = (isis_pkt_hdr_t *)GET_ETHERNET_HDR_PAYLOAD( (ethernet_hdr_t *) ptr);
 Macro that is to be used to initialized the FCS field of ethernet hdr with value K
     > SET_COMMON_ETH_FCS(eth_hdr, pkt_size, k);
@@ -1436,7 +1436,7 @@ typedef struct isis_pkt_hdr_ {
   isis_pkt_type isis_pkt_type;
   uint32_t seq_no;
   uint32_t str_id;
-  isis_pkt_hdr_flags_t flgas; 
+  isis_pkt_hdr_flags_t flgas;
 } isis_pkt_hdr_t;
 
 When device generates a new LSP packet from scratch, this seq nos is incremented first
@@ -1446,27 +1446,27 @@ and then this should be feed itno the lsp packet Rules
     lsp_pkt_hdr->seq_no-node_info->seq_no;
 
 This seq_no is used to control the flooding of the lsps in the topology
-Higher the seq nos the younger is said to be the lsp 
+Higher the seq nos the younger is said to be the lsp
 
 
-LSP Packet Generation 
+LSP Packet Generation
 ----------------------
 
-ISIS Protocol after creating the lsp packet will cache its own lsp packet so that 
+ISIS Protocol after creating the lsp packet will cache its own lsp packet so that
   > it has quick access to its own lsp packet
-  > re-transmit lsp packet as and when required 
+  > re-transmit lsp packet as and when required
 
   typedef struct node_info_ {
     /* pointer to self lsp packet */
     isis_lsp_pkt_t *self_lsp_pkt;
   } isis_node_info_t;
 
-Creating Fresh LSP packet 
+Creating Fresh LSP packet
 --------------------------
 
 static void
 isis_create_fresh_lsp_pkt(node_t *node)
-    
+
     Algorithm
     ----------
     > calculate the total size of the new lsp packet
@@ -1475,12 +1475,12 @@ isis_create_fresh_lsp_pkt(node_t *node)
     > discard the old lsp packet
     > cache the new lsp packet
 
-Fetching the addresses of the router id in the isis_pkt_hdr and also getting the 
+Fetching the addresses of the router id in the isis_pkt_hdr and also getting the
 ----------------------------------------------------------------------------------
-address of the seq_no stored in the isis_pkt_hdr_t 
+address of the seq_no stored in the isis_pkt_hdr_t
 ---------------------------------------------------
 
-Given a pointer to the LSP Pkt Structure ( isis_lsp_pkt_t * ) , 
+Given a pointer to the LSP Pkt Structure ( isis_lsp_pkt_t * ) ,
 getting the address of the router id stored in the isis_pkt_hdr_t as per the below API.
 
 uint32_t *
@@ -1497,7 +1497,7 @@ isis_get_lsp_pkt_rtr_id(isis_lsp_pkt_t *lsp_pkt) {
 
 }
 
-Given a pointer to the LSP Pkt Structure ( isis_lsp_pkt_t * ) , 
+Given a pointer to the LSP Pkt Structure ( isis_lsp_pkt_t * ) ,
 get the address of the seq_no stored in the isis_pkt_hdr_t as per the below API.
 
 uint32_t *
@@ -1542,13 +1542,13 @@ Printing out the contents of the lsdb
 ---------------------------------------
 
 	show node <node-name> proto isis lsdb
-         > uint32_t isis_show_one_lsp_pkt_detail(byte *buff, isis_pkt_hdr *lsp_pkt_hdr, size_t pkt_size); --> This function is serving two purposes i:e 
+         > uint32_t isis_show_one_lsp_pkt_detail(byte *buff, isis_pkt_hdr *lsp_pkt_hdr, size_t pkt_size); --> This function is serving two purposes i:e
           [priting the contents of the lsp packets and also tracing them as well]
                > creates a fresh lsp packet
                > check first if the buffer is null or not , if null then print it into the console
                > or else use the sprintf to print inside the buffer
                > return the nos of output in bytes
-         
+
 
        Note --> isis_show_one_lsp_pkt_detail() can be used to trace the the lsp packets by the tracing info
 
@@ -1557,7 +1557,7 @@ The proposed of waiting printing the detail should be like this ---->
 isis_show_one_lsp_pkt_detail ( ) formatted output sample :
 
 LSP : 122.1.1.0(9) [router_id(seq_no)] comes from the isis_pkt_hdr
-Flags :  
+Flags :
 TLVs
         TLV137 Host-Name : R0 [tlv_id]
         TLV22  Len : 31 [type length value]
@@ -1577,24 +1577,24 @@ Asynchronous Programming
 
 It shall be implemented using dispatch queue technique.Asynchronous programming is also taken as a part of multi-threading and coroutines
 
-The goals of the asynchronous programming 
- > event loop schedules the computation to be formed in future [computation is nothing but the unit of the work] 
- > It is also called as the event dispatcher 
- 
+The goals of the asynchronous programming
+ > event loop schedules the computation to be formed in future [computation is nothing but the unit of the work]
+ > It is also called as the event dispatcher
+
 
 Internal functional of the event loop
 -------------------------------------
 
 > It is ran by a thread called the event loop thread and schedules two events suspend and the thread events and this thread never terminates
 > Next we have the task array which is represented by the function F1, arg :: F2, arg :: F3, arg .............................. Fn, arg
-> The task array is implemented as the doubly linked list. 
+> The task array is implemented as the doubly linked list.
 
 So in simpler words event loop is nothing but a event looop thread + the task array, this isolates the other application threads.
 It is a separate indepedent thread acting on its task array.It works like a machine, picking up the function Gn + arg (computation)
 from its task array and placing it on execution stack
 
 It seralizes all computations, and discharge them one by one
-It continues to do so until the task array is empty, it resumes again if some application thread(s) submits new computation 
+It continues to do so until the task array is empty, it resumes again if some application thread(s) submits new computation
 to task array
 
 Kinda producer-consumer problem
@@ -1604,36 +1604,36 @@ As these are two diff threads we need to protect the enqueue and the dequeue ope
 
 If the task array is empty ihe event loop thread will be suspension.
 
-Problems solved by this 
+Problems solved by this
 -------------------------
    > When a devie is running a ISIS protocol implementation . For example if the device is running there are 3 LSPs from source nodes of the topology
          > update link state database
          > runnning the spf algo
          > calculating the spf routes
          > updating the routing table
-  A lot of time is taken for thse processing . If the lsp packet incomeing rate is constant and last one device cpu would be high, thus the device gets 
-  overloaded.If the device asynchronously process all incoming LSP packets, since the time to process one lsp packet take significant time, rest of the 
+  A lot of time is taken for thse processing . If the lsp packet incomeing rate is constant and last one device cpu would be high, thus the device gets
+  overloaded.If the device asynchronously process all incoming LSP packets, since the time to process one lsp packet take significant time, rest of the
   lsp packets may throttle the incoming queue and get dropped
 
   Solution
-       - If the device would have deferred the spf computation for a short while, and only update the lsdb with all the 3 lsps and trigger spf only after 3 lsp 
+       - If the device would have deferred the spf computation for a short while, and only update the lsdb with all the 3 lsps and trigger spf only after 3 lsp
          is updated in lsdb, then device would not have to redundant work i:e save the cpu.
 
 
 Related APIs
 --------------
  The logically isolated and non trival computations shall be performed asynchronously (by deferring it from the main flow)
-   These include 
+   These include
       > LSP packet generation
       > Flooding LSPs out of all local interfaces
       > Triggering SPF algo
-      > Route calculations and installation 
+      > Route calculations and installation
 
    computation = function - args
-   
-   invoking the function F asynchronously using 
+
+   invoking the function F asynchronously using
     > task_t *task =  task_create_new_job(
-			ARG, // pointer to the args 
+			ARG, // pointer to the args
 			F,  // pointer to the function
 			TASK_ONE_SHOT); // constant
 
@@ -1641,17 +1641,17 @@ Related APIs
    cancelling the task
     > task_cancel_job(task);
     > after cancelling the task > task = NULL;
-   
-   POC 
+
+   POC
    ----
 
    Synchronously
    ---------------
-  
+
    void foo() {
    printf("\nThis ");
    choco(arg);
-   printf("is my fav !!"); 
+   printf("is my fav !!");
 
    }
 
@@ -1659,14 +1659,14 @@ Related APIs
      printf("Chocolate");
    }
 
-   
+
    Result --> This chocolats is my fav !!!
 
    Asynchronously
    ------------------
-  
+
    void foo() {
-  
+
    printf("\nThis ");
    task_t *choco_task = task_create_new_task(arg, choco); // defer
    printf(" is my fav ");
@@ -1674,14 +1674,14 @@ Related APIs
 
    Result --> This is my fav chocolate
 
-   
+
 LSP Packet Generation API
 --------------------------
 
 Function --> isis_create_fresh_lsp_pkt
 
 > This api must be invoked when the isis hello packet has received different hostname, if-index or metric value then what is there in local adjacency object
-  on the recipent interface [ isis_update_interface_adjacency_from_hello() ] --> isis_update_interface_adjacency_from_hello() must be invoked as soon as we notice any 
+  on the recipent interface [ isis_update_interface_adjacency_from_hello() ] --> isis_update_interface_adjacency_from_hello() must be invoked as soon as we notice any
   changes in any of the above mentioned attributes.
 
 > User config changed which results in content of lsp packet to update
@@ -1696,9 +1696,81 @@ Function --> isis_create_fresh_lsp_pkt
 > Protocol intialization in the node level [ isis_init() ]
 > Periodically []
 
-> Remove the api call which has been placed in the show cli backend handler 
+> Remove the api call which has been placed in the show cli backend handler
 
      Note ---> Only Adjancies in the up state are as tlv 22
 
 
+Periodic generation architecture of LSP
+-----------------------------------------
 
+The isis node should not only have to generate the self lsp packets periodically, but also disburse it so as to ensure that all the nodes of the
+nodes of the topology has their lsdb in sync
+
+Terminologies
+--------------
+
+Disburse -> sending the new lsp pkt out of all the protocol enabled interafaces which has the adjacency in up state
+
+    Objectives 
+    -----------
+      > Timer must soon  start as soon as the protocol is enabled on the protocol level
+      > Timer must be stoppped only when the protocol is disabled on a node
+      > Flooding timer interval -> 120 sec [production testing] [5 sec in dev testing]
+
+      API 
+      ---
+
+      isisi_flood.c/h 
+
+      > void start_lsp_pkt_periodic_flooding(node_t *node);
+      > void stop+_lsp_pkt_periodic_flooding(node_t *node);
+
+Disbursment of the LSP
+-----------------------
+
+Sending out the lsp packet out of all the protocol enabled interfaces of a device which has the adj in up state
+
+POC
+---
+
+isis_node_info_ {
+    lsp_pkt_t *self_lsp_pkt;
+} isis_node_info_t;
+
+isis_intf_info_ {
+    // pointer to the head of the linked list which represents the transmission queue of the lsp packet  
+    glthred_t lsp_xmit_list_head;
+    task_t *lsp_xmit_job; // execute indepedently
+    ...
+    ...
+
+} isis_intf_info_t;
+
+/* This data structure will represent the architecture to act as a linked list to attach a lsp into the intf lsp xmit queue */
+typedef struct isis_lsp_xmit_elem_ {
+    isis_lsp_pkt_t *lsp_pkt;
+    glthread_t glue;
+} isis_lsp_xmit_elem_t;
+
+
+Each of the interace will have a pending queue which will be responnsible for disbursing the lsp packets
+
+
+Asynchronous Design pattern 
+-----------------------------
+
+ > Every interface will have a queue which maintains list of the lsps pending to be sent out of that interface.
+ > Every interface has a task/job whose responsibility is to disburse the pending lsp queue of all the interfaces.
+ > When the task/job of an interface is triggered, it dequeues lsps from the interface's pending queue one b[y one and send them out of the interface 
+ > When pending queue of an interface is empty, task/job is finished.
+ > When sending out a given lsp out of all eligible interface is completed, then the lsp is said to have completed its Disbursment procedure.
+
+Prototype of the API
+--------------------
+
+void isis_queue_lsp_pkt_for_transmission(interface_t *intf, isis_lsp_pkt *lsp_pkt); // isis_flood.c 
+
+Procedures for implementation
+------------------------------
+  > Queing the lsp packet
