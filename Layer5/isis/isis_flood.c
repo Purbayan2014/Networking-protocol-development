@@ -8,6 +8,7 @@
 #include "isis_adjacency.h"
 #include "isis_lspdb.h"
 #include "isis_intf_group.h"
+#include <stdio.h>
 
 extern void
 isis_parse_lsp_tlvs_internal(isis_lsp_pkt_t *new_lsp_pkt, 
@@ -74,10 +75,14 @@ isis_lsp_xmit_job(void *arg, uint32_t arg_size) {
     sprintf(tlb, "%s : lsp xmit job triggered\n", ISIS_LSPDB_MGMT);
     tcp_trace(intf->att_node, intf, tlb);
 
+    /*sanity checks*/
     if (!isis_node_intf_is_enable(intf)) return;
 
+    /* eligibility checks for the interface */
     has_up_adjacency = isis_any_adjacency_up_on_interface(intf);
 
+
+    /* iteration over the pending lsp queue of the interface for flooding */
     ITERATE_GLTHREAD_BEGIN(&intf_info->lsp_xmit_list_head, curr) {
 
         lsp_xmit_elem = glue_to_lsp_xmit_elem(curr);
@@ -134,6 +139,7 @@ isis_queue_lsp_pkt_for_transmission(
     isis_node_info_t *node_info;
     isis_intf_info_t *intf_info;
     
+    /* sanity checks */
     if (!isis_node_intf_is_enable(intf)) return;
 
     if (!lsp_pkt->flood_eligibility) return;
@@ -141,15 +147,23 @@ isis_queue_lsp_pkt_for_transmission(
     intf_info = ISIS_INTF_INFO(intf);
     node_info = ISIS_NODE_INFO(intf->att_node);
 
+    /* lsp_xmit_elem is used to queue up elements into the pending queue of the interfaces */
     isis_lsp_xmit_elem_t *lsp_xmit_elem =
+
         XCALLOC(0, 1, isis_lsp_xmit_elem_t);
     
+    /* lsp_xmit_elem serves as the glue */
     init_glthread(&lsp_xmit_elem->glue);
     lsp_xmit_elem->lsp_pkt = lsp_pkt;
     isis_ref_isis_pkt(lsp_pkt);
 
+    sprintf(tlb, "%s : LSP %s sheduled to enter into %s\n",
+        ISIS_LSPDB_MGMT, isis_print_lsp_id(lsp_pkt),
+        intf->if_name);
+
+    /* adding element at the tail of the linked list */
     glthread_add_last(&intf_info->lsp_xmit_list_head,
-                      &lsp_xmit_elem->glue);
+                      &lsp_xmit_elem->glue); /* lsp_xmit_elem getting added at the end of the linked list */
 
     sprintf(tlb, "%s : LSP %s scheduled to flood out of %s\n",
             ISIS_LSPDB_MGMT, isis_print_lsp_id(lsp_pkt),
@@ -159,10 +173,15 @@ isis_queue_lsp_pkt_for_transmission(
     lsp_pkt->flood_queue_count++;
     node_info->pending_lsp_flood_count++;
 
+    /* if job is not there then create a new one */
     if (!intf_info->lsp_xmit_job) {
 
+        sprintf(tlb,"%s: No task was present for interface %s\n",
+            ISIS_LSPDB_MGMT, intf->if_name);
         intf_info->lsp_xmit_job =
             task_create_new_job(intf, isis_lsp_xmit_job, TASK_ONE_SHOT);
+        sprintf(tlb, "%s : New task has been enqueued for the interface %s\n",
+        ISIS_LSPDB_MGMT, intf->if_name);
     }
 }
 
@@ -213,10 +232,12 @@ isis_schedule_lsp_flood(node_t *node,
 
     if (!lsp_pkt->flood_eligibility) return;
 
+    /* iterating over all the interfaces of the node */
     ITERATE_NODE_INTERFACES_BEGIN(node, intf) {
 
         if (!isis_node_intf_is_enable(intf)) continue;
 
+        /* if the interface is exempted */
         if (intf == exempt_iif) {
             sprintf(tlb, "%s : LSP %s flood skip out of intf %s, Reason :reciepient intf\n",
                         ISIS_LSPDB_MGMT, isis_print_lsp_id(lsp_pkt), intf->if_name);

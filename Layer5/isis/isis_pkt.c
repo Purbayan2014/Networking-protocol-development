@@ -353,6 +353,8 @@ isis_generate_lsp_pkt(void *arg, uint32_t arg_size_unused) {
     /* Now generate LSP pkt */
     isis_create_fresh_lsp_pkt(node);    
     isis_install_lsp(node, 0, node_info->self_lsp_pkt);
+    sprintf(tlb, "%s : Self-LSP Genearation task %p that was triggered has been ended\n",
+        ISIS_LSPDB_MGMT, node_info->lsp_pkt_gen_task);
 }
 
 void

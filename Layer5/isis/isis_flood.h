@@ -10,6 +10,7 @@ typedef struct isis_lsp_xmit_elem_ {
 GLTHREAD_TO_STRUCT(glue_to_lsp_xmit_elem, 
     isis_lsp_xmit_elem_t, glue);
 
+/* Disbursment API*/
 void
 isis_queue_lsp_pkt_for_transmission(
         interface_t *intf,
@@ -27,9 +28,10 @@ isis_schedule_lsp_flood(node_t *node,
 void
 isis_lsp_pkt_flood_complete(node_t *node, isis_lsp_pkt_t *lsp_pkt);
 
+/* Flooding API*/
 void
 isis_start_lsp_pkt_periodic_flooding(node_t *node);
-
+/* Flooding API*/
 void
 isis_stop_lsp_pkt_periodic_flooding(node_t *node);
 
