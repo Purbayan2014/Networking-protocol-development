@@ -279,12 +279,15 @@ isis_show_node_protocol_state(node_t *node) {
 static int
 isis_compare_lspdb_lsp_pkt(const avltree_node_t *n1, const avltree_node_t *n2) {
 
+    /* extracting out the lsp packets from the nodes of the avl tree */ 
     isis_lsp_pkt_t *lsp_pkt1 = avltree_container_of(n1, isis_lsp_pkt_t, avl_node_glue);
     isis_lsp_pkt_t *lsp_pkt2 = avltree_container_of(n2, isis_lsp_pkt_t, avl_node_glue);
 
+    /* extracting the rtr_id from the lsp packet */
     uint32_t *rtr_id1 = isis_get_lsp_pkt_rtr_id(lsp_pkt1);
     uint32_t *rtr_id2 = isis_get_lsp_pkt_rtr_id(lsp_pkt2);
 
+    /* comparing the rtr id */ 
     if (*rtr_id1 < *rtr_id2) return -1;
     if (*rtr_id1 > *rtr_id2) return 1;
     return 0;
@@ -322,6 +325,7 @@ isis_init(node_t *node ) {
     node_info->seq_no = 0;
     node_info->lsp_flood_interval    = ISIS_LSP_DEFAULT_FLOOD_INTERVAL;
     node_info->lsp_lifetime_interval = ISIS_LSP_DEFAULT_LIFE_TIME_INTERVAL;
+    /* initialization of the lspdb */
     avltree_init(&node_info->lspdb_avl_root, isis_compare_lspdb_lsp_pkt);
     isis_init_intf_group_avl_tree(&node_info->intf_grp_avl_root);
     node_info->on_demand_flooding    = ISIS_DEFAULT_ON_DEMAND_FLOODING_STATUS;

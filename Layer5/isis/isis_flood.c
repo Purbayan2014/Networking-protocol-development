@@ -113,7 +113,8 @@ isis_lsp_xmit_job(void *arg, uint32_t arg_size) {
             isis_lsp_pkt_flood_complete(intf->att_node, lsp_pkt);
         }
 
-        isis_deref_isis_pkt(lsp_pkt);
+        /* after pushing out the lsp packets thus the ref count has to be decreased*/
+        isis_deref_isis_pkt(lsp_pkt); 
 
     } ITERATE_GLTHREAD_END(&intf_info->lsp_xmit_list_head, curr);
 
@@ -155,6 +156,7 @@ isis_queue_lsp_pkt_for_transmission(
     /* lsp_xmit_elem serves as the glue */
     init_glthread(&lsp_xmit_elem->glue);
     lsp_xmit_elem->lsp_pkt = lsp_pkt;
+    /* here we are holding the ref to the lsp pkt above so increasing the ref count*/
     isis_ref_isis_pkt(lsp_pkt);
 
     sprintf(tlb, "%s : LSP %s sheduled to enter into %s\n",

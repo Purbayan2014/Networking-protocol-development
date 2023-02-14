@@ -651,6 +651,9 @@ isis_cancel_lsp_pkt_generation_task(node_t *node) {
 
 uint32_t *
 isis_get_lsp_pkt_rtr_id(isis_lsp_pkt_t *lsp_pkt) {
+/* For a particular lsp packet fetches the lsp packet 
+and then returns 
+the rtr_id i:e the IP address in the integer format*/
 
     ethernet_hdr_t *eth_hdr = (ethernet_hdr_t *)lsp_pkt->pkt;
     isis_pkt_hdr_t *lsp_hdr = (isis_pkt_hdr_t *)(eth_hdr->payload);

@@ -11,7 +11,7 @@
 void
 isis_parse_lsp_tlvs_internal(isis_lsp_pkt_t *new_lsp_pkt, 
                              bool *on_demand_tlv);
-
+// dummy lsp packet
 static isis_lsp_pkt_t *gl_lsp_dummy_pkt = NULL;
 
 static isis_lsp_pkt_t *
@@ -21,29 +21,36 @@ isis_get_dummy_lsp_pkt_with_key(uint32_t rtr_id) {
     uint32_t *rtr_id_addr;
 
     if (!gl_lsp_dummy_pkt) {
-    
+        // create a new one 
         gl_lsp_dummy_pkt = XCALLOC(0, 1, isis_lsp_pkt_t);
-
+        /* pkt size of the dummy lsp pkt */
         pkt_size = ETH_HDR_SIZE_EXCL_PAYLOAD +
-                    ISIS_LSP_HDR_SIZE;
-
+                    ISIS_LSP_HDR_SIZE; /* sizeof(isis_pkt_hdr_t) as the isis_pkt_hdr_t contains the rtr_id */
+        // init the pkt buffer that represents the isis_lsp_pkt
         gl_lsp_dummy_pkt->pkt = tcp_ip_get_new_pkt_buffer ( pkt_size);
-                        
+        /* dummy lsp packet should not be used for flooding  */
         isis_mark_isis_lsp_pkt_flood_ineligible(0, gl_lsp_dummy_pkt);
+        /* init the pkt size for the dummy lsp pkt */
         gl_lsp_dummy_pkt->pkt_size = pkt_size;
+        /* expiry timer of the dummy lsp pkt */
         gl_lsp_dummy_pkt->expiry_timer = NULL;
+        /* update the flag */
         gl_lsp_dummy_pkt->installed_in_db = false;
+        /* referece the dummy lsp pkt  */
         isis_ref_isis_pkt(gl_lsp_dummy_pkt);
     }
-    
+    /* getting the rtr id of the dummy lsp pkt */
     rtr_id_addr = isis_get_lsp_pkt_rtr_id(gl_lsp_dummy_pkt);
+    /* overwriting the rtr id with our rtr id for the dummy lsp pkt  */
     *rtr_id_addr = rtr_id;
+    /* return the lsp pkt */
     return gl_lsp_dummy_pkt;
 }
 
 void
 isis_free_dummy_lsp_pkt(void){
-
+    /* as the dummy lsp pkt is created on the heap its getting freed from this func 
+    as the protocol is getting shutdown */
     int rc;
     if(!gl_lsp_dummy_pkt) return ;
     rc = isis_deref_isis_pkt(gl_lsp_dummy_pkt);
@@ -469,23 +476,24 @@ isis_lookup_lsp_from_lsdb(node_t *node, uint32_t rtr_id) {
     avltree_t *lspdb = isis_get_lspdb_root(node);
 
     if (!lspdb) return NULL;
-
+    /* to perform the lookup we need a dummy which only contains the key*/
     isis_lsp_pkt_t *dummy_lsp_pkt = isis_get_dummy_lsp_pkt_with_key(rtr_id);
-
+    /* performing the lookup */
     avltree_node_t *avl_node =
         avltree_lookup(&dummy_lsp_pkt->avl_node_glue, lspdb);
 
     if (!avl_node) return NULL;
-
+    // return the lsp pkt parent node
     return avltree_container_of(avl_node, isis_lsp_pkt_t, avl_node_glue);
 }
 
 bool
 isis_our_lsp(node_t *node, isis_lsp_pkt_t *lsp_pkt) {
-
+    /* util function to check if this is native lsp packet or not */
     isis_node_info_t *node_info = ISIS_NODE_INFO(node);
-
+    /* extracting the rtr id of the lsp  */
     uint32_t *rtr_id = isis_get_lsp_pkt_rtr_id(lsp_pkt);
+    /* extaracting the rtr id of the node */
     uint32_t self_loop_back = tcp_ip_covert_ip_p_to_n(
                                 NODE_LO_ADDR(node));
 
@@ -501,9 +509,11 @@ isis_cleanup_lsdb(node_t *node) {
 
     if (!lspdb) return;
 
+    // iterate through the avl tree 
     ITERATE_AVL_TREE_BEGIN(lspdb, curr){
-
+        // fetch the lsp packet
         lsp_pkt = avltree_container_of(curr, isis_lsp_pkt_t, avl_node_glue);
+        // remove the lsp pkt from the lspdb
         isis_remove_lsp_pkt_from_lspdb(node, lsp_pkt);
     } ITERATE_AVL_TREE_END;
 }
@@ -765,34 +775,39 @@ isis_remove_lsp_pkt_from_lspdb(node_t *node, isis_lsp_pkt_t *lsp_pkt) {
 
     if (!lspdb) return;
 
+    // sanity check
     if (!isis_is_lsp_pkt_installed_in_lspdb(lsp_pkt)) return;
-
+    // remove the node from the lspdb
     avltree_remove(&lsp_pkt->avl_node_glue, lspdb);
+    // updating the bool flag 
     lsp_pkt->installed_in_db = false;
     isis_ted_uninstall_lsp(node, lsp_pkt);
     isis_stop_lsp_pkt_installation_timer(lsp_pkt);
     sprintf(tlb, "%s : LSP %s removed from LSPDB\n", ISIS_LSPDB_MGMT,
         isis_print_lsp_id(lsp_pkt));
     tcp_trace(node, 0, tlb);
+    // deref the removed lsp pkt
     isis_deref_isis_pkt(lsp_pkt);
 }
 
 bool
 isis_add_lsp_pkt_in_lspdb(node_t *node, isis_lsp_pkt_t *lsp_pkt) {
 
+    // get the root node 
     avltree_t *lspdb = isis_get_lspdb_root(node);
-
+     // sanity check
      if (!lspdb) return false;
-
+     // sanity check
      if (isis_is_lsp_pkt_installed_in_lspdb(lsp_pkt)) return false;
-
+     // add the lsp packet in the lsdpdb
      avltree_insert(&lsp_pkt->avl_node_glue, lspdb);
+     // update the bool flag 
      lsp_pkt->installed_in_db = true;
      isis_ted_install_lsp(node, lsp_pkt);
-
      if (!isis_our_lsp(node, lsp_pkt)) {
          isis_start_lsp_pkt_installation_timer(node, lsp_pkt);
      }
+     // reference the lsp pkt
      isis_ref_isis_pkt(lsp_pkt);
      sprintf(tlb, "%s : LSP %s added to lspdb\n", ISIS_LSPDB_MGMT, 
         isis_print_lsp_id(lsp_pkt));
@@ -806,10 +821,10 @@ isis_remove_lsp_from_lspdb(node_t *node, uint32_t rtr_id) {
     avltree_t *lspdb = isis_get_lspdb_root(node);
 
     if (!lspdb) return ;
-
+    // lcoate the lsp pkt from the lspdb using the rtr id
     isis_lsp_pkt_t *lsp_pkt = isis_lookup_lsp_from_lsdb(node, rtr_id);
 
     if (!lsp_pkt) return;
-
+    // remove the packet after being found
     isis_remove_lsp_pkt_from_lspdb(node, lsp_pkt);
 }
