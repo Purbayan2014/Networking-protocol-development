@@ -106,7 +106,7 @@ isis_protocol_shutdown_now (node_t *node) {
     /* Queue All interfaces for Purge */
     ITERATE_NODE_INTERFACES_BEGIN(node, intf) { 
 
-        isis_disable_protocol_on_interface(intf);
+        isis_disable_protocol_on_interface(intf); // purging through this
         
     } ITERATE_NODE_INTERFACES_END(node, intf);
     

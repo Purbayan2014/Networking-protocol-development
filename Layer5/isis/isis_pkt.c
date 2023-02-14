@@ -325,7 +325,7 @@ TLV_ADD_DONE:
         }
     }
     
-    // freeing up the old lsp packet if exists
+    // setting the value of the checksum
     SET_COMMON_ETH_FCS(eth_hdr, lsp_pkt_size_estimate, 0);
 
     // filling up with the new lsp packet i:e caching it
@@ -333,7 +333,7 @@ TLV_ADD_DONE:
     node_info->self_lsp_pkt->flood_eligibility = true;
     node_info->self_lsp_pkt->pkt = (byte *)eth_hdr;
     node_info->self_lsp_pkt->pkt_size = lsp_pkt_size_estimate;
-    node_info->self_lsp_pkt->ref_count = 1;
+    node_info->self_lsp_pkt->ref_count = 1; // initial ref count of the lsp packet
     UNSET_BIT64(node_info->event_control_flags,
         ISIS_EVENT_ADMIN_ACTION_DB_CLEAR_BIT);
 }
@@ -672,6 +672,7 @@ isis_deref_isis_pkt(isis_lsp_pkt_t *lsp_pkt) {
 
     uint32_t rc;
 
+    /* default sanity checks */
     assert(lsp_pkt->pkt &&
            lsp_pkt->pkt_size &&
            lsp_pkt->ref_count);
@@ -700,6 +701,7 @@ isis_deref_isis_pkt(isis_lsp_pkt_t *lsp_pkt) {
 void
 isis_ref_isis_pkt(isis_lsp_pkt_t *isis_pkt) {
 
+    /* default sanity checks */ 
     assert(isis_pkt->pkt &&
            isis_pkt->pkt_size);
 
