@@ -71,10 +71,114 @@ void
 isis_install_lsp(node_t *node,
                  interface_t *iif,
                  isis_lsp_pkt_t *new_lsp_pkt) {
+/* 
+Event
+Criteria
+Received via interface
+Action
+Remark
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    bool self_lsp;
-    bool recvd_via_intf;
-    uint32_t *rtr_id;
+    isis_event_self_duplicate_lsp
+    isis_our_lsp(node, new_lsp) == True and new_lsp→seq_no == old_lsp→seq_no
+    Yes
+    Ignore the LSP
+    As a part of the flooding algo, Node may recv its own duplicate lsp from other node.Since node already has it, no action.
+
+    No
+    Assert(0);
+    Node never generates a new LSP pkt with some seq no as before
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_self_fresh_lsp
+    isis_our_lsp(node, new_lsp) == True and old_lsp == NULL
+    No 
+    Install the lsp in the lspdb and Blind flood it 
+    Propagete the lsp further as a part of the flooding algo
+
+
+    Yes
+    Ignore the lsp and self gen lsp with higher seq nos and blind flood it 
+    Node receiving its own lsp when itself doesn’t have one, Node would try to overwrite the lsp of other node in the lspdb
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  
+    isis_event_self_new_lsp
+    isis_our_lsp(node, new_lsp) == True and new_lsp→seq_no > old_lsp→seq_no
+    Yes
+    Ignore the lsp and self gen lsp with higher seq nos and blind flood it 
+    Node receiving its own lsp when itself doesn’t have one, Node would try to overwrite the lsp of other node in the lspdb
+
+
+    No
+    Replace the new lsp in the lspdb with old lsp and blind flood it
+    Node is refreshing its own lsp with higher seq no
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_self_old_lsp
+    isis_our_lsp(node, new_lsp) == True and new_lsp→seq_no < old_lsp→seq_no
+    yes
+    Ignore the lsp and blood flood own lsp
+    Node would blind flood its own lsp so as to overwrite its own old lsp in other node’s lspdb
+
+    no
+    Assert(0);
+    Node cannot generate the lsp with old seq no
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Now the same for remote LSP
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    isis_event_non_local_duplicate_lsp
+    isis_our_lsp(node, new_lsp) == False and new_lsp-> seq_no == old_lsp->seq_no
+    Yes
+    Ignore the LSP
+    Node may recv own duplicate remote lsp from nbr node 
+
+    No 
+    assert(0);
+    Node will never generate remote lsps 
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_non_local_fresh_lsp
+    isis_our_lsp(node, new_lsp) == False and old_lsp == null
+    No 
+    assert(0);
+    Node never generate the remote lsps
+
+    Yes
+    Add LSP in DB, forward flood it 
+    Node recvd lsp of remote node for the first time, install it 
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_non_local_new_lsp
+    isis_our_lsp(node, new_lsp) == False and new_lsp->seq_no > old_lsp->seq_no 
+    Yes
+    replace the old lsp with the new lsp in the lspdb, forward flood new lsp 
+    Node recvd more recent remote lsp, update the lsdb with new lsp 
+
+    No 
+    assert(0);
+    Node never generates remote lsps
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    isis_event_non_local_old_lsp
+    isis_our_lsp(node, new_lsp) == False and new_lsp->seq_no < old_lsp->seq_no
+    Yes 
+    ignore the lsp, shoot back the lsp already in the lspdb on the recving interface 
+    Node would try to ovverwrite tge older remote lsp in other node lsdb by adversting the newer remote lsp it has 
+
+    No
+    assert(0);
+    node never generate the remote lsps
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+
+
+    bool self_lsp; /* tracks whether the self lsp packet is the lsp packet of the node or not */
+    bool recvd_via_intf; /* tracks if it was recvd on the interface or not  */
+    uint32_t *rtr_id; /* ptr to the rtr id that has been stored in the new lsp packet  */
     ip_add_t rtr_id_str;
     isis_lsp_pkt_t *old_lsp_pkt;
     isis_event_type_t event_type;
@@ -82,24 +186,27 @@ isis_install_lsp(node_t *node,
     uint32_t *old_seq_no = NULL;
     isis_pkt_hdr_flags_t lsp_flags;
     
+    /* recvd on the interface or not */
     recvd_via_intf = iif ? true : false;
+    /* checking if its own lsp  */
     self_lsp = isis_our_lsp(node, new_lsp_pkt);
-    event_type = isis_event_none;
+    event_type = isis_event_none; /* will help in computing the event the has been occured */
     lsp_flags = isis_lsp_pkt_get_flags(new_lsp_pkt);
-
+    /* fetch the rtr id of the new lsp packet  */
     rtr_id = isis_get_lsp_pkt_rtr_id(new_lsp_pkt);
+    /* convert to the string form to print it out  */
     tcp_ip_covert_ip_n_to_p(*rtr_id, rtr_id_str.ip_addr);
 
     bool purge_lsp = lsp_flags & ISIS_LSP_PKT_F_PURGE_BIT;
-
+    /* fetch the old lsp from the rtr id */
     old_lsp_pkt = isis_lookup_lsp_from_lsdb(
                     node, *rtr_id);
-
+    /* if the old lsp exist then get the seq nos for that old lsp  */
     if (old_lsp_pkt) {
         isis_ref_isis_pkt(old_lsp_pkt);
         old_seq_no = isis_get_lsp_pkt_seq_no(old_lsp_pkt);
     }
-
+    /* or else print the new seq no if it exists  */
     uint32_t *new_seq_no = isis_get_lsp_pkt_seq_no(new_lsp_pkt);
 
     sprintf(tlb, "%s : Lsp Recvd : %s-%u(%p) on intf %s, old lsp : %s-%u(%p)\n",
@@ -112,6 +219,7 @@ isis_install_lsp(node_t *node,
             old_lsp_pkt ? old_lsp_pkt->pkt : 0);
     tcp_trace(node, iif, tlb);
 
+    /* set it to true if the old lsp matches the new lsp  */
     duplicate_lsp = (old_lsp_pkt && (*new_seq_no == *old_seq_no));
 
     if (self_lsp && duplicate_lsp) {
@@ -155,6 +263,7 @@ isis_install_lsp(node_t *node,
                 ISIS_LSPDB_MGMT, isis_event_str(event_type));
             tcp_trace(node, iif, tlb);
             isis_add_lsp_pkt_in_lspdb(node, new_lsp_pkt);
+            /* as the exemepted interface is null so its blind flooding */
             isis_schedule_lsp_flood(node, new_lsp_pkt, 0, event_type);
         }
     }
@@ -210,6 +319,7 @@ isis_install_lsp(node_t *node,
         }
     }
 
+    /* processing the remote lsp packet events  */
     else if (!self_lsp && duplicate_lsp) {
 
         event_type = isis_event_non_local_duplicate_lsp;
