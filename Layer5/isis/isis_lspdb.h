@@ -45,12 +45,13 @@ avltree_t *
 isis_get_lspdb_root(node_t *node);
 
 int
-isis_install_lsp_pkt_in_lspdb(node_t *node, 
-                              isis_lsp_pkt_t *isis_lsp_pkt);
+isis_install_lsp_pkt_in_lspdb(node_t *node, /* ptr to the node lsp pkt is recvd */
+                              isis_lsp_pkt_t *isis_lsp_pkt); /* the lsp pkt which is about to be installed in the node's lspdb it can be recvd or self generated */
 
 isis_lsp_pkt_t *
 isis_lookup_lsp_from_lsdb(node_t *node, uint32_t rtr_id);
 
+/* integrating  the lspdb  */
 void
 isis_install_lsp(node_t *node,
                  interface_t *iif,

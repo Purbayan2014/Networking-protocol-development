@@ -114,7 +114,7 @@ isis_process_lsp_pkt(node_t *node,
     isis_lsp_pkt_t *new_lsp_pkt;
     isis_intf_info_t *intf_info;
     isis_node_info_t *node_info;
-    
+    /* sanity checks  */
     if (!isis_node_intf_is_enable(iif)) return;  
     if (!isis_any_adjacency_up_on_interface(iif)) return;
     if (isis_is_protocol_shutdown_in_progress(node)) return;
@@ -134,7 +134,8 @@ isis_process_lsp_pkt(node_t *node,
         ISIS_LSPDB_MGMT,
         isis_print_lsp_id(new_lsp_pkt), iif ? iif->if_name : 0);
     tcp_trace(node, iif, tlb);
-
+    /* install the lsp pkt on the interface's lspdb */
+    
     isis_install_lsp(node, iif, new_lsp_pkt);
     isis_deref_isis_pkt(new_lsp_pkt);
 }
@@ -352,6 +353,7 @@ isis_generate_lsp_pkt(void *arg, uint32_t arg_size_unused) {
 
     /* Now generate LSP pkt */
     isis_create_fresh_lsp_pkt(node);    
+    /* installing the lsp packet in the lspdb */
     isis_install_lsp(node, 0, node_info->self_lsp_pkt);
     sprintf(tlb, "%s : Self-LSP Genearation task %p that was triggered has been ended\n",
         ISIS_LSPDB_MGMT, node_info->lsp_pkt_gen_task);
