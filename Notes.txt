@@ -1,4 +1,4 @@
-				Working Prototype of the IGP - ISIS
+﻿				Working Prototype of the IGP - ISIS
 				------------------------------------
 
 OSPF favoured more now in the industry when ISIS is being shown more interest and preferred over ospf
@@ -1712,16 +1712,16 @@ Terminologies
 
 Disburse -> sending the new lsp pkt out of all the protocol enabled interafaces which has the adjacency in up state
 
-    Objectives 
+    Objectives
     -----------
       > Timer must soon  start as soon as the protocol is enabled on the protocol level
       > Timer must be stoppped only when the protocol is disabled on a node
       > Flooding timer interval -> 120 sec [production testing] [5 sec in dev testing]
 
-      API 
+      API
       ---
 
-      isisi_flood.c/h 
+      isisi_flood.c/h
 
       > void start_lsp_pkt_periodic_flooding(node_t *node);
       > void stop+_lsp_pkt_periodic_flooding(node_t *node);
@@ -1739,7 +1739,7 @@ isis_node_info_ {
 } isis_node_info_t;
 
 isis_intf_info_ {
-    // pointer to the head of the linked list which represents the transmission queue of the lsp packet  
+    // pointer to the head of the linked list which represents the transmission queue of the lsp packet
     glthred_t lsp_xmit_list_head;
     task_t *lsp_xmit_job; // execute indepedently
     ...
@@ -1757,20 +1757,419 @@ typedef struct isis_lsp_xmit_elem_ {
 Each of the interace will have a pending queue which will be responnsible for disbursing the lsp packets
 
 
-Asynchronous Design pattern 
+Asynchronous Design pattern
 -----------------------------
 
  > Every interface will have a queue which maintains list of the lsps pending to be sent out of that interface.
  > Every interface has a task/job whose responsibility is to disburse the pending lsp queue of all the interfaces.
- > When the task/job of an interface is triggered, it dequeues lsps from the interface's pending queue one b[y one and send them out of the interface 
+ > When the task/job of an interface is triggered, it dequeues lsps from the interface's pending queue one b[y one and send them out of the interface
  > When pending queue of an interface is empty, task/job is finished.
  > When sending out a given lsp out of all eligible interface is completed, then the lsp is said to have completed its Disbursment procedure.
 
 Prototype of the API
 --------------------
 
-void isis_queue_lsp_pkt_for_transmission(interface_t *intf, isis_lsp_pkt *lsp_pkt); // isis_flood.c 
+API 1 :
+void isis_queue_lsp_pkt_for_transmission(interface_t *intf, isis_lsp_pkt *lsp_pkt); // isis_flood.c
 
-Procedures for implementation
-------------------------------
-  > Queing the lsp packet
+    Procedures for implementation [LSP Disbursment and Periodic Generation ]
+    ------------------------------
+
+
+    > Queing the lsp packet into interface lsp xmit Queue
+        isis_lsp_xmit_elem_t *lsp_xmit_elem = calloc(1, isis_lsp_xmit_elem);
+        init_glthread(&lsp_xmit_elem->glue);
+        lsp_xmit_elem->lsp_pkt-lsp - lsp_pkt;
+        glthread_add_last(&intf_info->lsp_xmit_elem_head, &lsp_xmit_elem->glue);
+
+    > Forking out the new task to dispatch lsp pkt out of this queue, if not already
+
+        if (!intf_info->lsp_xmit_job) {
+            intf_job->lsp_xmit_job - task_create_new_job(intf, isis_lsp_xmit_job, TASK_ONE_SHOT);
+        }
+
+API 2 :
+static void isis_lsp_xmit_job(void *arg, uint32_t arg_size); // isis_flood.c
+
+    > Dequeing the lsp packet one by one from interface's lsp xmit queue an send_pkt_out() it of the interface
+
+API 3 : [Highest level API used]
+void isis_schedule_lsp_flood(
+    node_t *node,
+    isis_lsp_pkt_t *lsp_pkt,
+    interface_t *exempt_iif
+);
+
+    > Iterating over all the interfaces and Queing the lsp packet for transmission for each interface [only eligible ones ]
+
+    ITERATE_NODE_INTERFACES_BEGIN(node, intf) {
+        if(intf--exempt_intf) continue;
+        isis_queue_lsp_pkt_for_transmission(intf, lsp_pkt);
+    }ITERATE_NODE_INTERFACES_END(node, intf);
+
+Reference Counting Problem
+----------------------------
+
+There are various multi-referenced objects that are existing in the product to ensure that there are no dangling reference pointer 2 api's are needed
+   > void reference(A) {
+        A->ref_count++;
+   }
+   > void dereference(A) {
+        A->ref_count++;
+        if(A->ref_count == 0) free(A); // then only free the main object
+   }
+
+   void isis_ref_isis_pkt(*lsp_pkt);
+   void isis_deref_isis_pkt(*lsp_pkt);
+
+Link State Datbase Architecture
+---------------------------------
+isis_lsdb.h/c
+
+Database of the lsp packets that the device  has received + its own lsp packet. The architecture behind the lsp database will be a avl tree which will allow us to
+ > install
+ > delete
+ > lookup
+ > walk through the lsdb
+
+CLI design ---> show node <node-name> proto isis lsdb <rtr-id>
+
+    Related APIS
+    -------------
+
+    Integration steps
+    ---------------------
+
+     > initializing isis_init()
+       > avltree_init()
+
+     > de_initializing in isis_de_init_()
+        >  void isis_cleanup_lsdb(
+            node_t *node,
+        );
+
+      > installation API --> bool isis_add_lsp_pkt_in_lsdb(
+        node_t *node,
+        isis_lsp_pkt_t *lsp_pkt
+      );
+      > removal API ---> void isis_remove_lsp_from_lsdb(
+                                            node_t *node,
+                                            isis_lsp_pkt_t *lsp_pkt
+                            );
+
+                         void isis_remove_lsp_pkt_from_lsdb(
+                                            node_t *node,
+                                            isis_lsp_pkt_t *lsp_pkt
+                            );.
+      > Validation API --> bool isis_is_lsp_pkt_installed_in_lsdb(
+        isis_lsp_pkt_t *lsp_pkt
+      );
+      > UTILS ---> byte isis_print_lsp_id(isis_lsp_pkt_t *lsp_pkt);
+                   bool isis_our_lsp(
+                    node_t *node,
+                    isis_lsp_pkt_t *lsp_pkt;
+                   );
+      > Show --> void isis_show_one_lsp_pkt_detail(
+                                        node_t *node,
+                                        char *rtr_id_str
+                 );
+                 void_isis_show_lsdb(
+                            node_t *node
+                 );
+      > Lookup --> isis_lsp_pkt_t *isis_lookup_from_lsdb(
+                                        node_t *node,
+                                        uint32_t rtr_id
+                     );
+
+                    avttree_t *isis_get_lspdb_root(
+                                node_t *node
+                    );
+
+                 isis_lsp_pkt_t *isis_get_dummy_lsp_pkt_with_key(uint32_t rtr_id)
+
+Updating the lspdb
+---------------------
+
+Sources of LSP for a node
+  > Itself
+        > recv_intf -> NULL // receiving interface
+        > lsp is always self-lsp
+  > Other Interfaces or nodes
+        > recv_intf != NULL
+        > lsp can be self_lsp or remote_node lsp
+
+
+ The lsp packets should get installed in the lspdb --> isis_install_lsp()
+    > removing the obsolete lsps
+    > triggering the flooding of the lsp
+    > regenerate new lsp
+
+LSP Flooding Algorithm
+------------------------
+    > every node's lsp pkt needs to be distributed
+    > ensure the lsdb of all the nodes are in sync and accurate
+    > ensure there is a finite distribution or else there will be a infinite loop
+    > ensure the add/delete of new nodes in the topology
+
+    Key element --> LSP Sequence Nos
+
+    Versions of the LSP Flooding
+    > Forward flooding
+        Forwarding the packets to all the interfaces of the topology expect the interfaces that is it was received .
+    > Blind flooding
+        Blindly distribute to all the interfaces in the topology
+
+Self LSP Packet installation Rules
+-----------------------------------
+	> Maintain the lspdb which stores all the remote lsps recvd + self own lsp
+ 	> ISIS should be responsible that lsps installed in lsdb is corredt and accurate
+	> When the ISIS regens its own lsp it should install the new self lsp in the lspdb  replacing the old one if exist
+	> Node may recv its own lsp from remote nodes as well as part of flooding algo
+    > maintain the lspdb which store all remote lsps recvd + self own lsp
+
+Event
+Criteria
+Received via interface
+Action
+Remark
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_self_duplicate_lsp
+    isis_our_lsp(node, new_lsp) == True and new_lsp→seq_no == old_lsp→seq_no
+    Yes
+    Ignore the LSP
+    As a part of the flooding algo, Node may recv its own duplicate lsp from other node.Since node already has it, no action.
+
+    No
+    Assert(0);
+    Node never generates a new LSP pkt with some seq no as before
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_self_fresh_lsp
+    isis_our_lsp(node, new_lsp) == True and old_lsp == NULL
+    No
+    Install the lsp in the lspdb and Blind flood it
+    Propagete the lsp further as a part of the flooding algo
+
+
+    Yes
+    Ignore the lsp and self gen lsp with higher seq nos and blind flood it
+    Node receiving its own lsp when itself doesn’t have one, Node would try to overwrite the lsp of other node in the lspdb
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_self_new_lsp
+    isis_our_lsp(node, new_lsp) == True and new_lsp→seq_no > old_lsp→seq_no
+    Yes
+    Ignore the lsp and self gen lsp with higher seq nos and blind flood it
+    Node receiving its own lsp when itself doesn’t have one, Node would try to overwrite the lsp of other node in the lspdb
+
+
+    No
+    Replace the new lsp in the lspdb with old lsp and blind flood it
+    Node is refreshing its own lsp with higher seq no
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_self_old_lsp
+    isis_our_lsp(node, new_lsp) == True and new_lsp→seq_no < old_lsp→seq_no
+    yes
+    Ignore the lsp and blood flood own lsp
+    Node would blind flood its own lsp so as to overwrite its own old lsp in other node’s lspdb
+
+    no
+    Assert(0);
+    Node cannot generate the lsp with old seq no
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Now the same for remote LSP
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    isis_event_non_local_duplicate_lsp
+    isis_our_lsp(node, new_lsp) == False and new_lsp-> seq_no == old_lsp->seq_no
+    Yes
+    Ignore the LSP
+    Node may recv own duplicate remote lsp from nbr node
+
+    No
+    assert(0);
+    Node will never generate remote lsps
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_non_local_fresh_lsp
+    isis_our_lsp(node, new_lsp) == False and old_lsp == null
+    No
+    assert(0);
+    Node never generate the remote lsps
+
+    Yes
+    Add LSP in DB, forward flood it
+    Node recvd lsp of remote node for the first time, install it
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    isis_event_non_local_new_lsp
+    isis_our_lsp(node, new_lsp) == False and new_lsp->seq_no > old_lsp->seq_no
+    Yes
+    replace the old lsp with the new lsp in the lspdb, forward flood new lsp
+    Node recvd more recent remote lsp, update the lsdb with new lsp
+
+    No
+    assert(0);
+    Node never generates remote lsps
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    isis_event_non_local_old_lsp
+    isis_our_lsp(node, new_lsp) == False and new_lsp->seq_no < old_lsp->seq_no
+    Yes
+    ignore the lsp, shoot back the lsp already in the lspdb on the recving interface
+    Node would try to ovverwrite tge older remote lsp in other node lsdb by adversting the newer remote lsp it has
+
+    No
+    assert(0);
+    node never generate the remote lsps
+
+
+Debug Counters
+----------------
+
+Tracks how many times certain event counters which helps user keeps a track regarding how many times what events have generate triggered by the
+protocol during the course of its operation of the network
+
+typedef struct isis_node_info {
+    /* event counters */
+    uint32_t isis_event_count[isis_event_max];
+}
+
+show node <node-name> proto isis event-counters
+
+LSP Purging
+------------
+
+If the user disables the protocol ISIS on a node of a topology then rest of the  nodes in the toplogy must almost
+immediately delete the lsp pkt of the former ndoe and must not rely on the timeout of the LSP timer
+
+Purge in LSP is an LSP in which there is no TLVs except ISIS_TLV_HOSTNAME and only isis_pkt_hdr_t with purge bit
+set in isis_pkt_hdr_t
+
+    # define ISIS_LSP_PURGE LSP
+
+When the other routers in the topology recevs this purge LSP pky they immediately delete the existing LSP pkt from
+their LSDB and forward flood the purge LSP
+
+Purge LSP is also flooded using the same LSP flooding algorithm whichever node recvs it, delete the copy of the LSP
+pkt from its LSDB and forward-flood it.
+
+Result --> All nodes in the topology got rid of the LSP pkt of the dead ISIS router and the lsdb nodes are in sync
+
+Related API and procedure
+----------------------------
+
+void isis_create_and_flood_purge_lsp_pkt_synchronously(node_t *node);
+    > isis_create_fresh_lsp_pkt(node); // create the purge lsp
+        > should read the flag opt before creating the purge lsp pkt
+            > typedef struct isis_node_info_ {
+                /* control flags to generate the LSP*/
+                uint8_t lsp_gen_flags;
+            } isis_node_info_t;
+        /* LSP packet gen flags in isis_pkt.h*/
+        > # define ISIS_CREATE_LSP_PKT_CREATE_PURGE_LSP 1
+    > isis_flood_lsp_synchronously(node, node_info->self_lsp_pkt); // flood the purge lsp
+
+void isis_de_init(node_t *node){
+    interface_t *interface;
+    isis_node_info_t *isis_node_info = ISIS_NODE_INFO(node);
+    if(!isis_node_info) return;
+    isis_create_and_flood_purge_lsp_pkt_synchronously(node);
+}
+
+Sample Pseudocode
+-------------------
+
+void isis_create_and_flood_purge_l/sachinites/tcpip_stack/tree/DCB/Layer5sp_pkt_synchronously(node_t *node, isis_lsp_pkt_t *lsp_pkt) {
+    interface_t *intf;
+    isis_intf_info_t *intf_info;
+
+    ITERATE_NODE_INTERFACES_BEGIN(node, intf) {
+        if(!isis_node_intf_is_enable(intf)) continue;
+        intf_info = ISIS_INTF_INFO(intf);
+        if(intf_info->adjacency && intf_info->adjacency->adj_state == ISIS_ADJ_STATE_UP) {
+            send_pkt_out(lsp_pkt->pkt, lsp_pkt->pkt_size, intf);
+        }
+    }ITERATE_NODE_INTERFACES_END(node, intf);
+}
+
+Reconcillation
+----------------
+
+	Protocol Convergence
+	----------------------
+
+	If the protocol is disturbed at any point that is the adjancy went up or down it should trigger the entire computation cycle:
+		> regenerate self lsp and Disburse
+		> Run the spf algorithms
+		> Compute the routes
+		> Update the routing table
+
+		Converging time --> Timer interval beginning from the point when the protcol was simulated to the point when protocol has
+		updated it routing table again is called the protocol convergence time
+
+		Lesser Convergence time is desirable
+
+		Until the protocol converges, routing table has stale routes which results in traffic loss, traffic loop etc.
+
+		Protocol undergoes convergence should be of 2 types :
+			> Event based triggered convergence (fast)
+				When the admin changes the config and the router updates the routes in the lsdb very fast.
+			> Timer based triggered convergence (slow)
+				Assuming some flood timer interval has been set , so if the value is higher the higher will be the convergence
+				Setting the flood time interval too rigorous would result in frequent lsp flooding which would eat up a lot of
+				network resources in big topologies
+
+				So the solution is reconcillation
+
+		So we have to use a new tlv which will be called on demand tlv it will be of boolean type
+		whose size will be 1 and the value will be either be 1 or 0
+
+			> When the ISIS router detects its adjacency has gone upm it enters the reconcillation phase (void isis_enter_reconcillation_phase(node_t *node))
+			> In the reconcillation phase the router generates the self-lsp packest at an interval of 2 sec
+			> On demand tlv is inserted into lsp packets when the router is operating in reconcillation phase
+			> And they will flood their lsp pkts
+			> When the other router recvs lsp pkts with on demand tlv, it will blind floods its own lsp  in addition to processing the lsp pkts as per the noraml
+				lsp flooding algorithm
+			> When the router enter the reconcillation phase, it also starts the reconcillation phase timer at 10 sec (void isis_start_reconcillation_timer(node_t *node))
+			> when the reconcillation timer expires the router expires the reconcillation phase, and resumes the self lsp pkt periodic flooding as noraml
+					void isis_exit_reconcillation_phase(node_t *node)
+			> When the router operating in reconcillation phase detects self transitions, it starts the reconcillation timer (void isis_restart_reconcillation_timer(node_t *node))
+			> Router operating in reconcillation phase processes remote routers lsps as normal (no change)
+
+			On demand tlv is used to indicate to all the routers to help them to populate the lspdb of the newly attached router
+			in the topology by floooding their lsp packets to maintain the sync and accuracy in the protocol
+
+			Other Needed APIS
+			-------------
+
+			void isis_stop_reconcillation_timer(node_t *node);
+			bool isis_is_reconcillation_in_progress(node_t *node);
+
+			Structure for storing recon data
+			----------------------------------
+			typedef struct isis_recon_data_ {
+				/* is recon on ??? */
+				bool reconcillation_timer_in_progress;
+				/* reconcillation timer */
+				timer_event_handle *reconcillation_timer;
+			}isis_recon_data_t;
+
+			This will be a part of the isis_node_info_t data structure as it will be a part of the device level transmission.
+			
+
+Processing on Demand TLV
+--------------------------
+
+Case 1: if the other router is executing in reconcillation phase (kind of lsp storm)
+    > process lsp as per the lsp flooding algorithm 
+    > ignore the OD tlv
+Case 2: Else :
+    > Process LSP are per the lsp flooding algo (isis_install_lsp())
+    > blind flood its own lsp with higher seq no 
+
