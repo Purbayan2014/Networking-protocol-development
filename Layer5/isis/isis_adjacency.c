@@ -59,7 +59,7 @@ isis_adjacency_start_expiry_timer(
                                     0);
 
     if(!adjacency->expiry_timer){
-        
+
         sprintf(tlb, "%s : Adjacency %s Expiry timer failed to start\n",
             ISIS_ERROR, isis_adjacency_name(adjacency));
         tcp_trace(adjacency->intf->att_node, adjacency->intf, tlb);
@@ -74,7 +74,7 @@ isis_adjacency_start_expiry_timer(
  static void
  isis_adjacency_refresh_expiry_timer(
         isis_adjacency_t *adjacency) {
-  
+
     assert(adjacency->expiry_timer);
     timer_reschedule(adjacency->expiry_timer, adjacency->hold_time * 1000);
 }
@@ -108,14 +108,14 @@ isis_adjacency_start_delete_timer(
     if(adjacency->delete_timer){
         return;
     }
-    // or else invoke the timer 
+    // or else invoke the timer
     adjacency->delete_timer = timer_register_app_event(
                                     node_get_timer_instance(adjacency->intf->att_node),
                                     isis_timer_expire_delete_adjacency_cb, // timer expiry callback function
                                     (void *)adjacency, sizeof(isis_adjacency_t),
                                     ISIS_ADJ_DEFAULT_DELETE_TIME,
                                     0);
-    
+
     sprintf(tlb, "%s : Adjacency %s Delete timer started\n",
             ISIS_ADJ_MGMT, isis_adjacency_name(adjacency));
     tcp_trace(adjacency->intf->att_node, adjacency->intf, tlb);
@@ -188,15 +188,15 @@ isis_update_interface_adjacency_from_hello(
         interface_t *iif,
         byte *hello_tlv_buffer,
         size_t tlv_buff_size) {
-    
-    /* updates the adjacency matrix for the interface of the receiving hello packet 
-    
-  Algorithm: 
+
+    /* updates the adjacency matrix for the interface of the receiving hello packet
+
+  Algorithm:
    > if isis_adjacency doesnt exists on the iif them create a new one in DOWN STATE
    > iterating over the hello_tlv_buffer and copy all the 6 tlvs values from hello to adjacency members
    > also keep track if there is an change in any attribute of existing adjacency in step 2 (bool nbr_attr_changed)
    > keep track if adj is newly created (bool new_adj)
-    */ 
+    */
     char * router_id_str;
     uint8_t tlv_data_len;
     bool new_adj = false;
@@ -211,14 +211,14 @@ isis_update_interface_adjacency_from_hello(
     bool force_bring_down_adjacency = false;
 
     router_id_int = (uint32_t *)tlv_buffer_get_particular_tlv(
-                    hello_tlv_buffer, 
+                    hello_tlv_buffer,
                     tlv_buff_size,
-                    ISIS_TLV_RTR_ID, 
+                    ISIS_TLV_RTR_ID,
                     &tlv_data_len);
 
     adjacency = isis_find_adjacency_on_interface(iif, *router_id_int);
 
-   // if there is no adjacency then create a new one in down state 
+   // if there is no adjacency then create a new one in down state
     if(!adjacency){
         adjacency = (isis_adjacency_t *)XCALLOC(0, 1, isis_adjacency_t);
         isis_init_adjacency(adjacency);
@@ -236,7 +236,7 @@ isis_update_interface_adjacency_from_hello(
 
     byte tlv_type, tlv_len, *tlv_value = NULL;
     ITERATE_TLV_BEGIN(hello_tlv_buffer, tlv_type, tlv_len, tlv_value, tlv_buff_size){
-    // for each tlv checking if the value is different from the value held in hello tlv buffer        
+    // for each tlv checking if the value is different from the value held in hello tlv buffer
         switch(tlv_type){
             case ISIS_TLV_HOSTNAME:
                 if (memcmp(adjacency->nbr_name, tlv_value, tlv_len)) {
@@ -249,7 +249,7 @@ isis_update_interface_adjacency_from_hello(
                     adjacency->nbr_rtr_id = *(uint32_t *)(tlv_value);
                     force_bring_down_adjacency = true;
                 }
-            break;    
+            break;
             case ISIS_TLV_IF_IP:
                 memcpy((byte *)&four_byte_data, tlv_value, sizeof(four_byte_data));
                 if (adjacency->nbr_intf_ip != four_byte_data ) {
@@ -292,12 +292,12 @@ isis_update_interface_adjacency_from_hello(
         isis_change_adjacency_state(adjacency, ISIS_ADJ_STATE_DOWN);
     }
     else {
-            isis_adj_state_t adj_next_state = 
+            isis_adj_state_t adj_next_state =
                 isis_get_next_adj_state_on_receiving_next_hello(adjacency);
         isis_change_adjacency_state(adjacency, adj_next_state);
     }
 
-   if (regen_lsp && !force_bring_down_adjacency) { /* If the regenration has been asked for the lsp packets then regen it using 
+   if (regen_lsp && !force_bring_down_adjacency) { /* If the regenration has been asked for the lsp packets then regen it using
                 isis_schedule_lsp_pkt_generation */
        sprintf(tlb, "%s : ISIS Adjacency attr/ibutes changed, regen LSP \n",  ISIS_ADJ_MGMT);
         tcp_trace(iif->att_node, iif, tlb);
@@ -357,14 +357,14 @@ isis_show_adjacency( isis_adjacency_t *adjacency,
         adjacency->remote_if_index);
 
     PRINT_TABS(tab_spaces);
-    printf("Nbr Mac Addr : %02x:%02x:%02x:%02x:%02x:%02x\n", 
-            adjacency->nbr_mac.mac[0], 
-            adjacency->nbr_mac.mac[1], 
-            adjacency->nbr_mac.mac[2], 
-            adjacency->nbr_mac.mac[3], 
-            adjacency->nbr_mac.mac[4], 
+    printf("Nbr Mac Addr : %02x:%02x:%02x:%02x:%02x:%02x\n",
+            adjacency->nbr_mac.mac[0],
+            adjacency->nbr_mac.mac[1],
+            adjacency->nbr_mac.mac[2],
+            adjacency->nbr_mac.mac[3],
+            adjacency->nbr_mac.mac[4],
             adjacency->nbr_mac.mac[5]);
-        
+
     PRINT_TABS(tab_spaces);
     printf("State : %s   HT : %u sec   Cost : %u\n",
         isis_adj_state_str(adjacency->adj_state),
@@ -372,7 +372,7 @@ isis_show_adjacency( isis_adjacency_t *adjacency,
         adjacency->cost);
 
     PRINT_TABS(tab_spaces);
-    
+
     // Timer status
     if (adjacency->expiry_timer) {
         printf("Expiry Timer Remaining : %u msec\n",
@@ -404,7 +404,7 @@ void
 isis_change_adjacency_state(
             isis_adjacency_t *adjacency,
             isis_adj_state_t new_adj_state) {
-    
+
     // isis state transition diagram
 
 
@@ -413,7 +413,7 @@ isis_change_adjacency_state(
     isis_adj_state_t old_adj_state = adjacency->adj_state;
 
     intf_info = ISIS_INTF_INFO(adjacency->intf);
-    
+
     if (old_adj_state != new_adj_state) {
         sprintf(tlb, "%s : Adj %s state moving from %s to %s\n",
             ISIS_ADJ_MGMT, isis_adjacency_name(adjacency),
@@ -422,7 +422,7 @@ isis_change_adjacency_state(
         tcp_trace(node, adjacency->intf, tlb);
     }
 
-    switch(old_adj_state){ 
+    switch(old_adj_state){
 
         case ISIS_ADJ_STATE_DOWN:
 
@@ -438,7 +438,7 @@ isis_change_adjacency_state(
                     assert(0);
                     break;
                 default : ;
-            }   
+            }
             break;
 
         case ISIS_ADJ_STATE_INIT:
@@ -466,19 +466,21 @@ isis_change_adjacency_state(
                     }
 
                     if (ISIS_NODE_INFO(node)->adjacency_up_count == 1) {
+                        // moving from init to up state when the isis_enter_reconcillation_phase(node)
                         isis_enter_reconciliation_phase(node);
                     }
                     else if (isis_is_reconciliation_in_progress(node)){
+                        // if in progress then restart the reconcillation timer
                         isis_restart_reconciliation_timer(node);
                     }
                     else {
-                        isis_schedule_lsp_pkt_generation(node, isis_event_adj_state_changed); // fresh lsp packet generation 
+                        isis_schedule_lsp_pkt_generation(node, isis_event_adj_state_changed); // fresh lsp packet generation
                     }
 
                     isis_update_layer2_mapping_on_adjacency_up(adjacency);
                     break;
                 default : ;
-            }   
+            }
 
         case ISIS_ADJ_STATE_UP:
 
@@ -490,7 +492,7 @@ isis_change_adjacency_state(
                     ISIS_INCREMENT_NODE_STATS(node,
                                 isis_event_count[isis_event_adj_state_changed]);
                     ISIS_DECREMENT_NODE_STATS(node, adjacency_up_count);
-                   
+
                     if (intf_info->intf_grp) {
                         isis_intf_grp_refresh_member_interface (intf_info->intf);
                     }
@@ -501,8 +503,8 @@ isis_change_adjacency_state(
                         isis_restart_reconciliation_timer(node);
                     }
                     else {
-                        isis_schedule_lsp_pkt_generation(node, isis_event_adj_state_changed); // fresh lsp packet generation as these needs to be withdrawn from 
-                        // lsp packet as tlv 22 
+                        isis_schedule_lsp_pkt_generation(node, isis_event_adj_state_changed); // fresh lsp packet generation as these needs to be withdrawn from
+                        // lsp packet as tlv 22
                     }
                     isis_update_layer2_mapping_on_adjacency_down(adjacency);
                     break;
@@ -513,14 +515,14 @@ isis_change_adjacency_state(
                     isis_adjacency_refresh_expiry_timer(adjacency);
                     break;
                 default : ;
-            }   
+            }
 
             break;
         default : ;
     }
 }
 
-isis_adj_state_t 
+isis_adj_state_t
 isis_get_next_adj_state_on_receiving_next_hello(
     isis_adjacency_t *adjacency) {
 
@@ -531,8 +533,8 @@ isis_get_next_adj_state_on_receiving_next_hello(
             return ISIS_ADJ_STATE_UP;
         case ISIS_ADJ_STATE_UP:
             return ISIS_ADJ_STATE_UP;
-        default : ; 
-    }   
+        default : ;
+    }
 }
 
 bool
@@ -586,7 +588,7 @@ isis_any_adjacency_up_on_interface(interface_t *intf) {
 +-----------------------+                                     |       |
 |   SubTLV type3 Value  |< SubTLV type3 len>                  |       |
 +-----------------------+--------SubTLVs Ends-----------------v-------v
-+-----------------------+--------Parent TLV Ends---                    
++-----------------------+--------Parent TLV Ends---
 
 SUBTLVs :
 SubTLV 4 : Length 8B : Value = <4B local if index><4B Remote if index>
@@ -595,11 +597,11 @@ SubTLV 8 : Length 4B : Value = Nbr IP Address (4B)
 
 #endif
 
-uint8_t 
+uint8_t
 isis_nbr_tlv_encode_size(isis_adjacency_t *adjacency,
                          uint8_t *subtlv_len) {
 
-    /*computes the length of the tlv 22 from the adjacency object 
+    /*computes the length of the tlv 22 from the adjacency object
     and returns the value in the subtlv_len*/
 
     uint32_t ptlv_data_len = 0;  /* parent tlv data len */
@@ -617,10 +619,10 @@ isis_nbr_tlv_encode_size(isis_adjacency_t *adjacency,
     ptlv_data_len += 1;         /* total Sub TLV len */
 
      /* encode subtlv 4 */
-     /* tlv_overhead_size = sub type + length 
-         + 60 + 50 
-         
-         60 and 50 are the value of the sub type tlv 
+     /* tlv_overhead_size = sub type + length
+         + 60 + 50
+
+         60 and 50 are the value of the sub type tlv
          60 for local if index
          50 for remote if index */
     total_subtlv_len += TLV_OVERHEAD_SIZE + 4 + 4;
@@ -639,7 +641,7 @@ isis_nbr_tlv_encode_size(isis_adjacency_t *adjacency,
         return 0;
     }
     *subtlv_len = total_subtlv_len;
-    
+
     return ptlv_data_len;
 }
 
@@ -670,7 +672,7 @@ isis_encode_nbr_tlv(isis_adjacency_t *adjacency,
     /* loopback Address */
     memcpy(start_buff, (byte *)&adjacency->nbr_rtr_id, sizeof(adjacency->nbr_rtr_id));
     start_buff += sizeof(adjacency->nbr_rtr_id);
-    
+
     /* Metric / Cost */
     four_byte_data = ISIS_INTF_COST(adjacency->intf);
     memcpy(start_buff, (byte *)&four_byte_data, sizeof(uint32_t));
@@ -680,20 +682,20 @@ isis_encode_nbr_tlv(isis_adjacency_t *adjacency,
     memcpy(start_buff, (byte *)&subtlv_len, sizeof(uint32_t));
     start_buff += sizeof(uint8_t);
 
-    /* 
+    /*
        Now We are at the start of Ist SubTLV,
        encode local and remote if index
        Encoding SubTLV 4
     */
 
-    if_indexes[0] = IF_INDEX(adjacency->intf); // local interface index 
+    if_indexes[0] = IF_INDEX(adjacency->intf); // local interface index
     if_indexes[1] = adjacency->remote_if_index; // remote interface index
 
     start_buff = tlv_buffer_insert_tlv(start_buff,
                         ISIS_TLV_IF_INDEX, 8,
                         (byte *)if_indexes);
 
-    /* Encode local ip Address 
+    /* Encode local ip Address
        Encoding SubTLV 6 */
     four_byte_data = tcp_ip_covert_ip_p_to_n(IF_IP(adjacency->intf));
 
@@ -701,7 +703,7 @@ isis_encode_nbr_tlv(isis_adjacency_t *adjacency,
                         ISIS_TLV_LOCAL_IP, 4,
                         (byte *)&four_byte_data);
 
-    /* Encode remote ip Address 
+    /* Encode remote ip Address
        Encoding SubTLV 8 */
     start_buff = tlv_buffer_insert_tlv(start_buff,
                         ISIS_TLV_REMOTE_IP, 4,
@@ -715,7 +717,7 @@ isis_encode_all_nbr_tlvs(node_t *node, byte *buff) {
 
     /*
         Encodes all the adjacent objects in up state on a given node in a given
-        buffer . The api returs the pointer to the end of the buffer after 
+        buffer . The api returs the pointer to the end of the buffer after
         writing all the contents
     */
 
@@ -752,7 +754,7 @@ isis_size_to_encode_all_nbr_tlv(node_t *node) {
 
     /*
         Computes the size in bytes that is required to encode all the adjacenct
-        objects on a node as TLV 22 in a tlv buffer .The adjacenct objects are 
+        objects on a node as TLV 22 in a tlv buffer .The adjacenct objects are
         not counted as in the UP state.
     */
 
@@ -787,7 +789,7 @@ isis_size_to_encode_all_nbr_tlv(node_t *node) {
 
  /* Return the no of bytes written into out_buff */
 uint16_t
-isis_print_formatted_nbr_tlv22(byte *out_buff, 
+isis_print_formatted_nbr_tlv22(byte *out_buff,
                              byte *nbr_tlv_buffer, // tlv 22
                              uint8_t tlv_buffer_len) {
 
@@ -813,7 +815,7 @@ isis_print_formatted_nbr_tlv22(byte *out_buff,
                       tcp_ip_covert_ip_n_to_p(ip_addr_int, 0),
                       metric, subtlv_len);
 
-        subtlv_navigator = tlv_value + 
+        subtlv_navigator = tlv_value +
                             sizeof(uint32_t) +  // 4B IP Addr
                             sizeof(uint32_t) +  // 4B metric
                             sizeof(uint8_t);    // 1B subtlv len
@@ -858,13 +860,13 @@ isis_print_formatted_nbr_tlv22(byte *out_buff,
 
         } ITERATE_TLV_END(subtlv_navigator, tlv_type2,
                         tlv_len2, tlv_value2, subtlv_len);
- 
+
     } ITERATE_TLV_END(nbr_tlv_buffer, tlv_type,
                         tlv_len, tlv_value, tlv_buffer_len);
     return rc;
 }
 
-uint32_t 
+uint32_t
 isis_show_all_adjacencies (node_t *node) {
 
      uint32_t rc = 0;
@@ -877,14 +879,14 @@ isis_show_all_adjacencies (node_t *node) {
     ITERATE_NODE_INTERFACES_BEGIN (node, intf) {
 
         if ( !isis_node_intf_is_enable(intf)) continue;
-        
+
         ITERATE_GLTHREAD_BEGIN(ISIS_INTF_ADJ_LST_HEAD(intf), curr){
 
             adjacency = glthread_to_isis_adjacency(curr);
 
             if (!adjacency) continue;
 
-            rc += sprintf(buff + rc, "%-16s   %-16s   %-6s   %s\n", 
+            rc += sprintf(buff + rc, "%-16s   %-16s   %-6s   %s\n",
             intf->if_name, adjacency->nbr_name,
             isis_adj_state_str(adjacency->adj_state),
             hrs_min_sec_format(

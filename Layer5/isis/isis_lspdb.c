@@ -197,6 +197,7 @@ Now the same for remote LSP
     /* convert to the string form to print it out  */
     tcp_ip_covert_ip_n_to_p(*rtr_id, rtr_id_str.ip_addr);
 
+    /* checks whether to generate a purged lsp packet or not  when the interface receives a purged lsp packet on the interface */
     bool purge_lsp = lsp_flags & ISIS_LSP_PKT_F_PURGE_BIT;
     /* fetch the old lsp from the rtr id */
     old_lsp_pkt = isis_lookup_lsp_from_lsdb(
@@ -475,7 +476,7 @@ isis_parse_lsp_tlvs(node_t *node,
                     isis_lsp_pkt_t *new_lsp_pkt,
                     isis_lsp_pkt_t *old_lsp_pkt,
                     isis_event_type_t event_type) {
-
+    // Processing of on demand tlvs
     bool need_spf = false;
     bool pkt_diff = false;
     bool on_demand_tlv = false;

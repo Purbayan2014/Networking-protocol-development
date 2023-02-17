@@ -7,7 +7,7 @@ typedef struct isis_lsp_xmit_elem_ {
     isis_lsp_pkt_t *lsp_pkt;
     glthread_t glue;
 } isis_lsp_xmit_elem_t;
-GLTHREAD_TO_STRUCT(glue_to_lsp_xmit_elem, 
+GLTHREAD_TO_STRUCT(glue_to_lsp_xmit_elem,
     isis_lsp_xmit_elem_t, glue);
 
 /* Disbursment API*/
@@ -20,7 +20,7 @@ void
 isis_intf_purge_lsp_xmit_queue(interface_t *intf);
 
 void
-isis_schedule_lsp_flood(node_t *node, 
+isis_schedule_lsp_flood(node_t *node,
                         isis_lsp_pkt_t *lsp_pkt,
                         interface_t *exempt_intf,
                         isis_event_type_t event_type);
@@ -39,6 +39,7 @@ void
 isis_mark_isis_lsp_pkt_flood_ineligible(
         node_t *node, isis_lsp_pkt_t *lsp_pkt);
 
+// All the reconcillation needed APIS
 void
 isis_enter_reconciliation_phase(node_t *node);
 

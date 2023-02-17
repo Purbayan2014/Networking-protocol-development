@@ -15,6 +15,7 @@ typedef struct isis_timer_data_ {
     size_t data_size;
 } isis_timer_data_t;
 
+// reconcillation data structure 
 typedef struct isis_reconc_data_ {
 
    /* is reconciliation going on */
