@@ -212,3 +212,221 @@ conf node R1 proto isis interface eth2
 conf node R2 proto isis interface eth3
 show node R1 proto isis lsdb
 show node R2 proto isis lsdb
+show topo
+conf node R1 proto isis 
+conf node R1 proto isis interface all
+conf node R2 proto isis
+conf node R2 proto isis interface all
+conf node R3 proto isis 
+conf node R3 proto isis interface all
+conf node R4 proto isis 
+conf node R4 proto isis interface all
+conf node R5 proto isis 
+conf node R5 proto isis interface all
+show node R2 proto isis adjacency
+show node R2 proto isis
+show node R2 proto isis ls
+conf node R3 no proto isis
+show node R2 proto isis ls
+show node R2 proto isis adj
+conf node R3 proto isis
+conf node R3 proto isis interface all
+show node R3 proto isis adj
+show node R2 proto isis adj
+show node R2 proto isis ls
+conf node R3 interface /
+?
+eth9 /
+?
+ip-add 50.1.1.10 24
+cd 
+show node R3 proto isis
+show node R2 proto isis ls
+show topo
+conf node R0 proto isis 
+conf node R1 proto isis
+conf node R0 proto isis interface all
+conf node R1 proto isis interface all
+show node R1 proto isis ls
+show node R0 proto isis ls
+show node R1 proto isis adj
+show node R0 proto isis adj
+show node R1 proto isis ls
+show node R0 proto isis adj
+show node R1 proto isis ls
+show node R0 proto isis ls
+conf node R0 no proto isis
+show node R0 proto isis ls
+conf node R0 proto isis
+conf node R0 proto isis interface all
+show node R0 proto isis ls
+show node R0 proto isis ls
+show node R1 proto isis ls
+show node R0 proto isis ?
+show node R0 proto isis ted
+show node  R1 proto isis ted
+show topo
+show node R0 proto isis ted
+show node R0 proto isis ?
+show node R0 proto isis lsdb ?
+show node R0 proto isis event-counters
+show node R0 proto isis ?
+show node R0 proto isis adj
+conf node R0 proto isis
+conf node R0 proto isis interface all
+conf node R1 proto isis 
+conf node R1 proto isis interface all
+show node R0 proto isis ted
+show node R1 proto isis ted
+show node R1 proto isis ls
+show node R0 proto isis ls
+show topo
+show node R1 proto isis lsdb ?
+show node R1 proto isis lsdb 122.1.1.1
+show topo
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.2
+conf node R0 proto isis
+conf node R1 proto isis
+conf node R0 proto isis interface all
+conf node R1 proto isis interface all
+show node R1 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.2
+show node R0 proto isis adj
+show node R1 proto isis adj
+show node R0 proto isis lsdb 122.1.1.2
+show node R0 proto isis ls
+show node R0 proto isis ls
+conf node R1 no proto isis
+show node R0 proto isis lsdb 122.1.1.2
+show node R0 proto isis ls
+show node R0 proto isis lsdb 122.1.1.2
+show node R0 proto isis lsdb 122.1.1.1
+show topo
+conf node R0 proto isis
+conf node R1 proto isis
+conf node R1 proto isis interface all
+conf node R0 proto isis interface all
+show node R1 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+show node R1 proto isis lsdb 122.1.1.2
+conf node R1 no proto isis
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+show node R1 proto isis lsdb 122.1.1.2
+show node R1 proto isis lsdb 122.1.1.2
+show node R0 proto isis lsdb 122.1.1.2
+show node R1 proto isis lsdb 122.1.1.2
+show node R0 proto isis lsdb 122.1.1.1
+conf node R1 proto isis 
+conf node R1 proto isis interface all
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+conf node R1 no proto isis 
+show node R0 proto isis lsdb 122.1.1.1.
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+conf node R1 proto isis
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+conf node R1 proto isis interface all
+conf node R1 proto isis /
+interface all
+cd 
+conf node R0 proto isis /
+interface all
+cd 
+show node R1 proto isis
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+conf node R1 no proto isis interface all
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1
+conf node R1 proto isis interface all
+show node R0 proto isis lsdb 122.1.1.1
+show topo
+conf node R0 proto isis interface all
+conf node R0 proto isis
+conf node R0 proto isis interface all
+conf node R1 proto isis 
+conf node R1 proto isis interface all
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis ls
+conf node R1 no proto isis
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis ls
+conf node R1 proto isis
+show node R0 proto isis ls 122.1.1.1
+conf node R1 proto isis interface all
+show node R0 proto isis ls 122.1.1.1
+conf node R1 proto isis
+conf node R0 proto isis
+conf node R1 proto isis interface all
+conf node R0 proto isis interface all
+show node R0 proto isis lsdb 122.1.1.1
+show node R0 proto isis lsdb 122.1.1.1.
+show node R0 proto isis lsdb 122.1.1.1
+conf node R1 no proto isis
+show node R0 proto isis lsdb 122.1.1.1
+conf node R1 proto isis
+show node R0 proto isis ls 122.1.1.1
+conf node R1 proto isis interface all
+show node R1 proto isis lsdb 122.1.1.1
+run ut ?
+show topo
+conf node R0 proto isis
+conf node R1 proto isis
+conf node R2 proto isis
+conf node R3 proto isis 
+conf node R4 proto isis
+conf node R5 proto isis
+conf node R1 proto isis interface all
+conf node R2 proto isis interface all 
+conf node R3 proto isis interface all
+conf node R4 proto isis interface all
+conf node R5 proto isis interface all
+show ?
+show topo ?
+show topo node ?
+show topo node R0
+conf node R3 interface eth9 traceoption flag recv
+conf node R4 interface eth6 traceoption flag recv
+conf node R1 proto isis
+conf node R2 proto isis
+conf node R3 proto isis
+conf node R4 proto isis
+conf node R5 proto isis
+conf node R1 proto isis interface all
+conf node R2 proto isis interface all
+conf node R3 proto isis interface all
+conf node R4 proto isis interface all
+conf node R5 proto isis interface all
+show node R2 proto isis interface
+conf node R1 proto isis
+conf node R1 proto isis interface eth2
+show node R1 proto isis ls
+show node R1 proto isis
+show node R1 proto isis ls
+conf node R2 proto isis
+conf node R2 proto isis interface eth3
+show node R2 proto isis ls
+show node R1 proto isis interface st
+show node R1 interface st
+show node R2 interface st
+show node R1 proto isis interface
+show node R2 proto isis interface 
+show node R1 proto isis ls
+show node R2 proto isis ls
+show node R2 proto isis event
+show topo
+conf node R0 proto isis 
+conf node R0 proto isis interface all
+conf node R1 proto isis
+conf node R1 proto isis interface all
+show node R0 proto isis lsdb 122.1.1.0
+conf node R0 proto isis overload
+conf node R0 proto isis overload timeout 30
+show node R0 proto isis
